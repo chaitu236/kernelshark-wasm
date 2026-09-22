@@ -1,0 +1,207 @@
+diff --git a/Makefile b/Makefile
+index 0cedd2a2..7d48ac52 100644
+--- a/Makefile
++++ b/Makefile
+@@ -283,6 +283,7 @@ INCLUDES += -I$(src)/include/trace-cmd
+ INCLUDES += -I$(src)/lib/trace-cmd/include
+ INCLUDES += -I$(src)/lib/trace-cmd/include/private
+ INCLUDES += -I$(src)/tracecmd/include
++INCLUDES += $(CONFIG_INCLUDES)
+ INCLUDES += $(LIBTRACEEVENT_CFLAGS)
+ INCLUDES += $(LIBTRACEFS_CFLAGS)
+ 
+@@ -326,6 +327,7 @@ TEST_LIBZSTD := $(shell sh -c "$(PKG_CONFIG) --atleast-version 1.4.0 libzstd > /
+ ifeq ("$(TEST_LIBZSTD)", "y")
+ LIBZSTD_CFLAGS := $(shell sh -c "$(PKG_CONFIG) --cflags libzstd")
+ LIBZSTD_LDLAGS := $(shell sh -c "$(PKG_CONFIG) --libs libzstd")
++INCLUDES += $(LIBZSTD_CFLAGS)
+ CFLAGS += -DHAVE_ZSTD
+ ZSTD_INSTALLED=1
+ $(info    Have ZSTD compression support)
+@@ -388,7 +390,11 @@ CMD_TARGETS = trace-cmd $(BUILD_PYTHON)
+ #    If you want all libraries, then do: make libs
+ ###
+ 
++ifeq ($(WASM),1)
++all: libs
++else
+ all: all_cmd plugins show_other_make
++endif
+ 
+ all_cmd: $(CMD_TARGETS)
+ 
+@@ -413,7 +419,11 @@ $(LIBTRACECMD_SHARED): force
+ libtracecmd.a: $(LIBTRACECMD_STATIC)
+ libtracecmd.so: $(LIBTRACECMD_SHARED)
+ 
++ifeq ($(WASM),1)
++libs: $(LIBTRACECMD_STATIC) $(PKG_CONFIG_FILE)
++else
+ libs: $(LIBTRACECMD_SHARED) $(PKG_CONFIG_FILE)
++endif
+ 
+ VERSION = $(LIBTC_VERSION)
+ PATCHLEVEL = $(LIBTC_PATCHLEVEL)
+@@ -502,8 +512,12 @@ install_bash_completion: force
+ install_cmd: all_cmd install_plugins install_python install_bash_completion
+ 	$(Q)$(call do_install,$(obj)/tracecmd/trace-cmd,$(bindir_SQ))
+ 
++ifeq ($(WASM),1)
++install: install_libs
++else
+ install: install_cmd
+ 	@echo "Note: to install man pages, type \"make install_doc\""
++endif
+ 
+ install_gui: force
+ 	@echo "Nothing to do here."
+diff --git a/lib/trace-cmd/Makefile b/lib/trace-cmd/Makefile
+index aba6fda5..4b75494b 100644
+--- a/lib/trace-cmd/Makefile
++++ b/lib/trace-cmd/Makefile
+@@ -2,6 +2,8 @@
+ 
+ include $(src)/scripts/utils.mk
+ 
++override CFLAGS += $(CONFIG_INCLUDES)
++
+ bdir:=$(obj)/lib/trace-cmd
+ ldir:=$(src)/lib/trace-cmd
+ 
+@@ -107,13 +109,18 @@ install_pkgconfig: $(PKG_CONFIG_FILE)
+ 	$(Q)$(call do_install_pkgconfig_file,$(prefix))
+ 
+ install_libs: install_pkgconfig
++
++ifeq ($(WASM),1)
++	$(Q)$(call do_install,$(LIBTRACECMD_STATIC),$(libdir_SQ))
++else
+ 	$(Q)$(call do_install,$(LIBTRACECMD_SHARED),$(libdir_SQ))
+ 	$(Q)$(call print_install,$(LIBTRACECMD_SHARED_VERSION),$(DESTDIR)$(libdir_SQ))
+ 	$(Q)cp -fpR $(LIBTRACECMD_SHARED_VERSION) $(DESTDIR)$(libdir_SQ)
+ 	$(Q)$(call print_install,$(LIBTRACECMD_SHARED_SO),$(DESTDIR)$(libdir_SQ))
+ 	$(Q)cp -fpR $(LIBTRACECMD_SHARED_SO) $(DESTDIR)$(libdir_SQ)
+-	$(Q)$(call do_install,$(src)/include/trace-cmd/trace-cmd.h,$(includedir_SQ)/trace-cmd,644)
+ 	$(Q)$(call install_ld_config)
++endif
++	$(Q)$(call do_install,$(src)/include/trace-cmd/trace-cmd.h,$(includedir_SQ)/trace-cmd,644)
+ 
+ dep_includes := $(wildcard $(DEPS))
+ 
+diff --git a/lib/trace-cmd/trace-timesync.c b/lib/trace-cmd/trace-timesync.c
+index 40b8c241..3864d82c 100644
+--- a/lib/trace-cmd/trace-timesync.c
++++ b/lib/trace-cmd/trace-timesync.c
+@@ -490,6 +490,10 @@ void tracecmd_tsync_free(struct tracecmd_time_sync *tsync)
+ 
+ static cpu_set_t *pin_to_cpu(int cpu)
+ {
++#ifdef __EMSCRIPTEN__
++	(void)cpu;
++	return NULL;
++#else
+ 	static size_t size;
+ 	static int cpus;
+ 	cpu_set_t *mask = NULL;
+@@ -525,10 +529,14 @@ error:
+ 	if (old)
+ 		CPU_FREE(old);
+ 	return NULL;
++#endif
+ }
+ 
+ static void restore_pin_to_cpu(cpu_set_t *mask)
+ {
++#ifdef __EMSCRIPTEN__
++	(void)mask;
++#else
+ 	static size_t size;
+ 
+ 	if (!size)
+@@ -536,6 +544,7 @@ static void restore_pin_to_cpu(cpu_set_t *mask)
+ 
+ 	pthread_setaffinity_np(pthread_self(), size, mask);
+ 	CPU_FREE(mask);
++#endif
+ }
+ 
+ static int tsync_send(struct tracecmd_time_sync *tsync, unsigned int cpu)
+@@ -790,8 +799,10 @@ tracecmd_tsync_with_guest(unsigned long long trace_id, int loop_interval,
+ 		goto error;
+ 	tsync->thread_running = true;
+ 
++#ifndef __EMSCRIPTEN__
+ 	if (!get_first_cpu(&pin_mask, &mask_size))
+ 		pthread_setaffinity_np(tsync->thread, mask_size, pin_mask);
++#endif
+ 	pthread_barrier_wait(&tsync->first_sync);
+ 
+ 	if (pin_mask)
+@@ -986,8 +997,10 @@ tracecmd_tsync_with_host(int fd, const char *proto, const char *clock,
+ 		goto error;
+ 	}
+ 	tsync->thread_running = true;
++#ifndef __EMSCRIPTEN__
+ 	if (!get_first_cpu(&pin_mask, &mask_size))
+ 		pthread_setaffinity_np(tsync->thread, mask_size, pin_mask);
++#endif
+ 
+ 	if (pin_mask)
+ 		CPU_FREE(pin_mask);
+diff --git a/lib/trace-cmd/trace-util.c b/lib/trace-cmd/trace-util.c
+index 14975d32..83ade2a8 100644
+--- a/lib/trace-cmd/trace-util.c
++++ b/lib/trace-cmd/trace-util.c
+@@ -15,10 +15,12 @@
+ #include <ctype.h>
+ #include <limits.h>
+ #include <libgen.h>
+-#include <sys/mount.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
++#ifndef __EMSCRIPTEN__
++#include <sys/mount.h>
+ #include <sys/sysinfo.h>
++#endif
+ #include <time.h>
+ #include <event-parse.h>
+ #include <event-utils.h>
+@@ -606,6 +608,9 @@ int tracecmd_count_cpus(void)
+  */
+ unsigned long long tracecmd_generate_traceid(void)
+ {
++#ifdef __EMSCRIPTEN__
++	return 0;
++#else
+ 	unsigned long long hash = 0;
+ 	unsigned char *ustr;
+ 	struct sysinfo sinfo;
+@@ -630,6 +635,7 @@ unsigned long long tracecmd_generate_traceid(void)
+ 
+ 	free(str);
+ 	return hash;
++#endif
+ }
+ 
+ /*
+diff --git a/libtracecmd.pc.template b/libtracecmd.pc.template
+index bcf4e39d..5361f35f 100644
+--- a/libtracecmd.pc.template
++++ b/libtracecmd.pc.template
+@@ -9,3 +9,4 @@ Version: LIB_VERSION
+ Requires: libtracefs >= LIBTRACEFS_MIN_VERSION
+ Cflags: -I${includedir}
+ Libs: -L${libdir} -ltracecmd
++Libs.private: LIBZSTD_LDLAGS
+diff --git a/scripts/utils.mk b/scripts/utils.mk
+index 3fc2d74f..1fbe135e 100644
+--- a/scripts/utils.mk
++++ b/scripts/utils.mk
+@@ -170,6 +170,7 @@ define do_make_pkgconfig_file
+ 	sed -i "s|LIB_VERSION|${LIBTRACECMD_VERSION}|g" ${PKG_CONFIG_FILE}; \
+ 	sed -i "s|LIB_DIR|$(libdir)|g" ${PKG_CONFIG_FILE}; \
+ 	sed -i "s|LIBTRACEFS_MIN_VERSION|$(LIBTRACEFS_MIN_VERSION)|g" ${PKG_CONFIG_FILE}; \
++	sed -i "s|LIBZSTD_LDLAGS|$(LIBZSTD_LDLAGS)|g" ${PKG_CONFIG_FILE}; \
+ 	sed -i "s|HEADER_DIR|$(includedir)/trace-cmd|g" ${PKG_CONFIG_FILE};
+ endef
+ 

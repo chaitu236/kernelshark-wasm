@@ -1,0 +1,65 @@
+diff --git a/Makefile b/Makefile
+index 0afaef0..5c4c0d9 100644
+--- a/Makefile
++++ b/Makefile
+@@ -187,12 +187,19 @@ CMD_TARGETS = $(LIB_TARGET) $(PKG_CONFIG_FILE)
+ 
+ TARGETS = $(CMD_TARGETS)
+ 
++ifeq ($(WASM),1)
++all: all_cmd
++else
+ all: all_cmd plugins
++endif
+ 
+ $(bdir):
+ 	$(Q)mkdir -p $(bdir)
+ 
+ LIB_TARGET  = libtraceevent.a libtraceevent.so
++ifeq ($(WASM),1)
++LIB_TARGET = libtraceevent.a
++endif
+ LIB_INSTALL = libtraceevent.a libtraceevent.so*
+ LIB_INSTALL := $(addprefix $(bdir)/,$(LIB_INSTALL))
+ 
+@@ -206,7 +213,7 @@ all_cmd: $(CMD_TARGETS)
+ libtraceevent.a: $(bdir) $(LIBTRACEEVENT_STATIC)
+ libtraceevent.so: $(bdir) $(LIBTRACEEVENT_SHARED)
+ 
+-libs: libtraceevent.a libtraceevent.so
++libs: $(LIB_TARGET)
+ 
+ $(LIBTRACEEVENT_STATIC): force
+ 	$(Q)$(call descend,$(src)/src,$@)
+@@ -334,12 +341,21 @@ define install_ld_config
+ endef
+ endif # DESTDIR = ""
+ 
++ifeq ($(WASM),1)
++install: install_libs
++else
+ install: install_libs install_plugins
++	$(Q)$(call install_ld_config)
++endif
+ 
+ install_libs: libs install_headers install_pkgconfig
++
++ifeq ($(WASM),1)
++	$(Q)$(call do_install,$(LIBTRACEEVENT_STATIC),$(libdir_SQ));
++else
+ 	$(Q)$(call do_install,$(LIBTRACEEVENT_SHARED),$(libdir_SQ)); \
+ 		cp -fpR $(LIB_INSTALL) $(DESTDIR)$(libdir_SQ)
+-	$(Q)$(call install_ld_config)
++endif
+ 
+ install_pkgconfig: $(PKG_CONFIG_FILE)
+ 	$(Q)$(call do_install_pkgconfig_file,$(prefix))
+@@ -350,8 +366,6 @@ install_headers:
+ 	$(Q)$(call do_install,$(EP_HEADERS_DIR)/trace-seq.h,$(includedir_SQ),644);
+ 	$(Q)$(call do_install,$(EP_HEADERS_DIR)/kbuffer.h,$(includedir_SQ),644)
+ 
+-install: install_libs
+-
+ clean: clean_plugins clean_src clean_meson
+ 	$(Q)$(call do_clean,\
+ 	    $(VERSION_FILE) $(obj)/tags $(obj)/TAGS $(PKG_CONFIG_FILE) \

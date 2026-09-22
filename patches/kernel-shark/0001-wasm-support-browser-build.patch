@@ -1,0 +1,2104 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 6aa1a5b..df6f244 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -81,8 +81,8 @@ find_package (Boost COMPONENTS unit_test_framework)
+ set(LIBRARY_OUTPUT_PATH    "${KS_DIR}/lib")
+ set(EXECUTABLE_OUTPUT_PATH "${KS_DIR}/bin")
+ 
+-set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -Wall -Wextra -pthread -fPIC -fno-common")
+-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pthread -fPIC -fno-common")
++set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -Wall -Wextra -fPIC -fno-common")
++set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fPIC -fno-common")
+ 
+ find_package(OpenMP 3.2.5)
+ if (OPENMP_FOUND)
+@@ -137,7 +137,7 @@ message(STATUS "CXX flags    : " ${CMAKE_CXX_FLAGS})
+ message(STATUS "Linker flags : " ${CMAKE_EXE_LINKER_FLAGS})
+ 
+ add_subdirectory(${KS_DIR}/src)
+-add_subdirectory(${KS_DIR}/examples)
++#add_subdirectory(${KS_DIR}/examples)
+ 
+ if (Boost_FOUND)
+ 
+@@ -168,9 +168,6 @@ configure_file(${KS_DIR}/build/deff.h.cmake
+ configure_file(${KS_DIR}/build/ks.desktop.cmake
+                ${KS_DIR}/${KS_APP_NAME}.desktop)
+ 
+-configure_file(${KS_DIR}/build/org.freedesktop.kshark-record.policy.cmake
+-               ${KS_DIR}/org.freedesktop.kshark-record.policy)
+-
+ configure_file(${KS_DIR}/build/libkshark.pc.cmake
+                ${KS_DIR}/libkshark.pc @ONLY)
+ 
+diff --git a/build/FindJSONC.cmake b/build/FindJSONC.cmake
+index 2d0d41f..0cb0be7 100644
+--- a/build/FindJSONC.cmake
++++ b/build/FindJSONC.cmake
+@@ -44,6 +44,7 @@ set(JSONC_DEFINITIONS ${PC_JSONC_CFLAGS_OTHER})
+ find_path(JSONC_INCLUDE_DIR json.h
+           HINTS ${PC_JSONC_INCLUDEDIR} ${PC_JSONC_INCLUDE_DIRS}
+           PATH_SUFFIXES json-c)
++set(JSONC_INCLUDE_DIR ${PC_JSONC_INCLUDEDIR})
+ 
+ find_library(JSONC_LIBRARY NAMES json-c libjson-c
+              HINTS ${PC_JSONC_LIBDIR} ${PC_JSONC_LIBRARY_DIRS})
+@@ -51,6 +52,7 @@ find_library(JSONC_LIBRARY NAMES json-c libjson-c
+ find_library(JSONC_LIBRARY NAMES json-c libjson-c
+              HINTS ${PC_JSON-C_LIBDIR} ${PC_JSON-C_LIBRARY_DIRS})
+ 
++set(JSONC_LIBRARY ${PC_JSONC_LIBDIR}/libjson-c.a)
+ mark_as_advanced(JSONC_INCLUDE_DIR JSONC_LIBRARY)
+ 
+ include(FindPackageHandleStandardArgs)
+diff --git a/build/FindTraceCmd.cmake b/build/FindTraceCmd.cmake
+index 602eac5..270e77f 100644
+--- a/build/FindTraceCmd.cmake
++++ b/build/FindTraceCmd.cmake
+@@ -45,10 +45,12 @@ set(TraceCmd_DEFINITIONS ${PC_TraceCmd_CFLAGS_OTHER})
+ find_path(TraceCmd_INCLUDE_DIR NAMES trace-cmd.h
+                                HINTS ${PC_TraceCmd_INCLUDE_DIRS}
+                                      ${PC_TraceCmd_INCLUDEDIR})
++set(TraceCmd_INCLUDE_DIR ${PC_TraceCmd_INCLUDEDIR})
+ 
+ find_library(TraceCmd_LIBRARY  NAMES tracecmd libtracecmd
+                                HINTS ${PC_TraceCmd_LIBDIR}
+                                      ${PC_TraceCmdLIBRARY_DIRS})
++set(TraceCmd_LIBRARY ${PC_TraceCmd_LIBDIR}/libtracecmd.a)
+ 
+ mark_as_advanced(TraceCmd_INCLUDE_DIR TraceCmd_LIBRARY)
+ 
+@@ -69,6 +71,7 @@ if(TraceCmd_FOUND)
+                           PROPERTIES
+                             INTERFACE_INCLUDE_DIRECTORIES "${TraceCmd_INCLUDE_DIRS}"
+                             INTERFACE_COMPILE_DEFINITIONS "${TraceCmd_DEFINITIONS}"
++                            INTERFACE_LINK_LIBRARIES "${PC_TraceCmd_STATIC_LDFLAGS}"
+                             IMPORTED_LINK_INTERFACE_LANGUAGES "C"
+                             IMPORTED_LOCATION "${TraceCmd_LIBRARIES}")
+   endif()
+diff --git a/build/FindTraceEvent.cmake b/build/FindTraceEvent.cmake
+index 668a5de..29d42cb 100644
+--- a/build/FindTraceEvent.cmake
++++ b/build/FindTraceEvent.cmake
+@@ -46,10 +46,13 @@ find_path(TraceEvent_INCLUDE_DIR  NAMES event-parse.h
+                                   HINTS ${PC_TraceEvent_INCLUDE_DIRS}
+                                         ${PC_TraceEvent_INCLUDEDIR})
+ 
++set(TraceEvent_INCLUDE_DIR ${PC_TraceEvent_INCLUDEDIR})
++
+ find_library(TraceEvent_LIBRARY   NAMES traceevent libtraceevent
+                                   HINTS ${PC_TraceEvent_LIBDIR}
+                                         ${PC_TraceEventLIBRARY_DIRS})
+ 
++set(TraceEvent_LIBRARY ${PC_TraceEvent_LIBDIR}/libtraceevent.a)
+ mark_as_advanced(TraceEvent_INCLUDE_DIR TraceEvent_LIBRARY)
+ 
+ include(FindPackageHandleStandardArgs)
+diff --git a/build/FindTraceFS.cmake b/build/FindTraceFS.cmake
+index 251b506..12fd9c2 100644
+--- a/build/FindTraceFS.cmake
++++ b/build/FindTraceFS.cmake
+@@ -45,10 +45,12 @@ set(TraceFS_DEFINITIONS ${PC_TraceFS_CFLAGS_OTHER})
+ find_path(TraceFS_INCLUDE_DIR  NAMES tracefs.h
+                                HINTS ${PC_TraceFS_INCLUDE_DIRS}
+                                      ${PC_TraceFS_INCLUDEDIR})
++set(TraceFS_INCLUDE_DIR ${PC_TraceFS_INCLUDEDIR})
+ 
+ find_library(TraceFS_LIBRARY   NAMES tracefs libtracefs
+                                HINTS ${PC_TraceFS_LIBDIR}
+                                      ${PC_TraceFSLIBRARY_DIRS})
++set(TraceFS_LIBRARY ${PC_TraceFS_LIBDIR}/libtracefs.a)
+ 
+ mark_as_advanced(TraceFS_INCLUDE_DIR TraceFS_LIBRARY)
+ 
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 0643365..594f16a 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -54,15 +54,25 @@ install(CODE "message(\"-- Executing: ldconfig ${_LIBDIR}\")
+ if (OPENGL_FOUND)
+ 
+     message(STATUS "libkshark-plot")
+-    add_library(kshark-plot  SHARED  libkshark-plot.c
+-                                     KsPlotTools.cpp
++    set(ks-plot-sources              KsPlotTools.cpp
+                                      KsPlugins.cpp)
+ 
++    if (NOT EMSCRIPTEN)
++        list(APPEND ks-plot-sources libkshark-plot.c)
++    endif ()
++
++    add_library(kshark-plot SHARED ${ks-plot-sources})
++
+     target_link_libraries(kshark-plot  kshark
+-                                       GLUT::GLUT
+-                                       OpenGL::GLU)
++                                       #GLUT::GLUT
++                                       #OpenGL::GLU
++                                       )
+ 
+-    set_target_properties(kshark-plot PROPERTIES  SUFFIX ".so.${KS_VERSION_STRING}")
++    if (EMSCRIPTEN)
++        target_link_libraries(kshark-plot Qt6::Gui)
++    endif ()
++
++    #set_target_properties(kshark-plot PROPERTIES  SUFFIX ".so.${KS_VERSION_STRING}")
+     install(TARGETS kshark-plot
+             LIBRARY DESTINATION    ${_LIBDIR}
+                 COMPONENT              kernelshark)
+@@ -89,7 +99,7 @@ if (Qt6Widgets_FOUND AND TT_FONT_FILE)
+                         KsTraceGraph.hpp
+                         KsTraceViewer.hpp
+                         KsMainWindow.hpp
+-                        KsCaptureDialog.hpp
++                        #KsCaptureDialog.hpp
+                         KsQuickContextMenu.hpp
+                         KsAdvFilteringDialog.hpp)
+ 
+@@ -106,7 +116,7 @@ if (Qt6Widgets_FOUND AND TT_FONT_FILE)
+                                                             KsTraceViewer.cpp
+                                                             KsMainWindow.cpp
+                                                             KsPluginsGUI.cpp
+-                                                            KsCaptureDialog.cpp
++                                                            #KsCaptureDialog.cpp
+                                                             KsQuickContextMenu.cpp
+                                                             KsAdvFilteringDialog.cpp)
+ 
+@@ -117,17 +127,20 @@ if (Qt6Widgets_FOUND AND TT_FONT_FILE)
+                                      Qt6::StateMachine)
+ 
+ 
+-    set_target_properties(kshark-gui PROPERTIES  SUFFIX ".so.${KS_VERSION_STRING}")
++    #set_target_properties(kshark-gui PROPERTIES  SUFFIX ".so.${KS_VERSION_STRING}")
+ 
+     message(STATUS ${KS_APP_NAME})
+     add_executable(${KS_APP_NAME}          kernelshark.cpp)
+     target_link_libraries(${KS_APP_NAME}   kshark-gui)
+ 
+-    message(STATUS "kshark-record")
+-    add_executable(kshark-record        kshark-record.cpp)
+-    target_link_libraries(kshark-record kshark-gui)
++    if (EMSCRIPTEN)
++        add_custom_command(TARGET ${KS_APP_NAME} POST_BUILD
++                           COMMAND ${CMAKE_COMMAND} -E copy_if_different
++                                   "${CMAKE_CURRENT_SOURCE_DIR}/kernelshark.html"
++                                   "${EXECUTABLE_OUTPUT_PATH}/${KS_APP_NAME}.html")
++    endif ()
+ 
+-    install(TARGETS ${KS_APP_NAME} kshark-record kshark-gui
++    install(TARGETS ${KS_APP_NAME} kshark-gui
+             RUNTIME DESTINATION       ${_INSTALL_PREFIX}/bin/
+                 COMPONENT                 kernelshark
+             LIBRARY DESTINATION       ${_LIBDIR}
+@@ -142,14 +155,6 @@ if (Qt6Widgets_FOUND AND TT_FONT_FILE)
+             DESTINATION ${_INSTALL_PREFIX}/share/icons/${KS_APP_NAME}
+                 COMPONENT                 kernelshark)
+ 
+-    install(FILES "${KS_DIR}/org.freedesktop.kshark-record.policy"
+-            DESTINATION ${_POLKIT_INSTALL_PREFIX}/share/polkit-1/actions/
+-                COMPONENT                 polkit-policy)
+-
+-    install(PROGRAMS "${KS_DIR}/bin/kshark-su-record"
+-            DESTINATION ${_INSTALL_PREFIX}/bin/
+-                COMPONENT                 kernelshark)
+-
+     install(FILES "${KS_DIR}/src/KsPluginsGUI.hpp"
+             DESTINATION ${KS_INCLUDS_DESTINATION}
+                 COMPONENT libkshark-devel)
+@@ -157,6 +162,16 @@ if (Qt6Widgets_FOUND AND TT_FONT_FILE)
+     add_subdirectory(plugins)
+     set(PLUGINS ${PLUGINS} PARENT_SCOPE)
+ 
++    if (EMSCRIPTEN)
++        target_sources(${KS_APP_NAME} PRIVATE plugins/KsBuiltinPlugins.cpp)
++        target_link_options(${KS_APP_NAME} PRIVATE
++                            "-sPTHREAD_POOL_SIZE=8"
++                            "-sINITIAL_MEMORY=1GB"
++                            "-sEXPORTED_FUNCTIONS=_main,_kernelshark_load_file"
++                            "-sEXPORTED_RUNTIME_METHODS=UTF16ToString,stringToUTF16,FS,ccall"
++                            "-sASYNCIFY")
++    endif ()
++
+     find_program(DO_AS_ROOT pkexec)
+ 
+ endif ()
+diff --git a/src/KsGLWidget.cpp b/src/KsGLWidget.cpp
+index 7f2001c..89434fc 100644
+--- a/src/KsGLWidget.cpp
++++ b/src/KsGLWidget.cpp
+@@ -13,8 +13,15 @@
+ #include <GL/glut.h>
+ #include <GL/gl.h>
+ 
++#ifdef __EMSCRIPTEN__
++#include <QFontMetrics>
++#include <QPainter>
++#include <QPaintEvent>
++#include <QResizeEvent>
++#endif
++
+ // OpenMP
+-#include <omp.h>
++//#include <omp.h>
+ 
+ // KernelShark
+ #include "libkshark-plugin.h"
+@@ -42,7 +49,7 @@ void operator >>(const KsPlotEntry &plot, QVector<int> &v)
+ 
+ /** Create a default (empty) OpenGL widget. */
+ KsGLWidget::KsGLWidget(QWidget *parent)
+-: QOpenGLWidget(parent),
++: KsGraphWidgetBase(parent),
+   _labelSize(100),
+   _hMargin(15),
+   _vMargin(25),
+@@ -55,9 +62,21 @@ KsGLWidget::KsGLWidget(QWidget *parent)
+ {
+ 	setMouseTracking(true);
+ 
++#ifdef __EMSCRIPTEN__
++	_dpr = QApplication::primaryScreen()->devicePixelRatio();
++	QFont font;
++	font.setPixelSize(15);
++	QFontMetrics metrics(font);
++	_font.texture_id = 2;
++	_font.height = metrics.height();
++	_font.base = metrics.descent();
++	_font.size = 15;
++	_font.char_width = metrics.horizontalAdvance('z');
++#endif
++
+ 	connect(&_model,	&QAbstractTableModel::modelReset,
+ 		this,		qOverload<>(&KsGLWidget::update));
+-	omp_set_num_threads(omp_get_num_procs());
++	//omp_set_num_threads(omp_get_num_procs());
+ }
+ 
+ void KsGLWidget::_freeGraphs()
+@@ -84,6 +103,7 @@ KsGLWidget::~KsGLWidget()
+ 	freePluginShapes();
+ }
+ 
++#ifndef __EMSCRIPTEN__
+ /** Reimplemented function used to set up all required OpenGL resources. */
+ void KsGLWidget::initializeGL()
+ {
+@@ -95,6 +115,26 @@ void KsGLWidget::initializeGL()
+ 	_labelSize = _getMaxLabelSize() + FONT_WIDTH * 2;
+ 	updateGeom();
+ }
++#endif
++
++#ifdef __EMSCRIPTEN__
++void KsGLWidget::resizeEvent(QResizeEvent *event)
++{
++	QWidget::resizeEvent(event);
++	resizeGL(event->size().width(), event->size().height());
++}
++
++void KsGLWidget::paintEvent(QPaintEvent *event)
++{
++	Q_UNUSED(event)
++	QPainter painter(this);
++	painter.fillRect(rect(), Qt::white);
++	painter.setRenderHint(QPainter::Antialiasing, false);
++	KsPlot::setPainter(&painter);
++	paintGL();
++	KsPlot::setPainter(nullptr);
++}
++#endif
+ 
+ /**
+  * Reimplemented function used to reprocess all graphs when the widget has
+@@ -102,7 +142,14 @@ void KsGLWidget::initializeGL()
+  */
+ void KsGLWidget::resizeGL(int w, int h)
+ {
+-	ksplot_resize_opengl(w, h);
++#ifndef __EMSCRIPTEN__
++	if (QOpenGLContext::currentContext())
++		ksplot_resize_opengl(w, h);
++#else
++	Q_UNUSED(w)
++	Q_UNUSED(h)
++#endif
++
+ 	if(!_data)
+ 		return;
+ 
+@@ -131,7 +178,12 @@ void KsGLWidget::paintGL()
+ {
+ 	float size = 1.5 * _dpr;
+ 
++#ifndef __EMSCRIPTEN__
++	glUseProgram(0);
++	ksplot_resize_opengl(width(), height());
++	glClearColor(1, 1, 1, 1);
+ 	glClear(GL_COLOR_BUFFER_BIT);
++#endif
+ 
+ 	if (isEmpty())
+ 		return;
+@@ -383,7 +435,7 @@ void KsGLWidget::keyPressEvent(QKeyEvent *event)
+ 		return;
+ 
+ 	default:
+-		QOpenGLWidget::keyPressEvent(event);
++		KsGraphWidgetBase::keyPressEvent(event);
+ 		return;
+ 	}
+ }
+@@ -402,7 +454,7 @@ void KsGLWidget::keyReleaseEvent(QKeyEvent *event)
+ 		return;
+ 	}
+ 
+-	QOpenGLWidget::keyPressEvent(event);
++	KsGraphWidgetBase::keyReleaseEvent(event);
+ 	return;
+ }
+ 
+@@ -593,20 +645,20 @@ void KsGLWidget::_drawAxisX(float size)
+ 	if (count <= 0)
+ 		return;
+ 
+-	ksplot_print_text(&_font, nullptr,
+-			  a0.x(),
+-			  a0.y() - _hMargin / 2,
+-			  tMin);
++	KsPlot::drawText(&_font, {},
++			 a0.x(),
++			 a0.y() - _hMargin / 2,
++			 tMin);
+ 
+-	ksplot_print_text(&_font, nullptr,
+-			  b0.x() - _font.char_width * count / 2,
+-			  b0.y() - _hMargin / 2,
+-			  tMid);
++	KsPlot::drawText(&_font, {},
++			 b0.x() - _font.char_width * count / 2,
++			 b0.y() - _hMargin / 2,
++			 tMid);
+ 
+-	ksplot_print_text(&_font, nullptr,
+-			  c0.x() - _font.char_width * count,
+-			  c0.y() - _hMargin / 2,
+-			  tMax);
++	KsPlot::drawText(&_font, {},
++			 c0.x() - _font.char_width * count,
++			 c0.y() - _hMargin / 2,
++			 tMax);
+ 
+ 	free(tMin);
+ 	free(tMid);
+diff --git a/src/KsGLWidget.hpp b/src/KsGLWidget.hpp
+index cafc70b..8585ed7 100644
+--- a/src/KsGLWidget.hpp
++++ b/src/KsGLWidget.hpp
+@@ -14,7 +14,13 @@
+ 
+ // Qt
+ #include <QRubberBand>
++#ifdef __EMSCRIPTEN__
++#include <QWidget>
++using KsGraphWidgetBase = QWidget;
++#else
+ #include <QOpenGLWidget>
++using KsGraphWidgetBase = QOpenGLWidget;
++#endif
+ 
+ // KernelShark
+ #include "KsUtils.hpp"
+@@ -67,7 +73,7 @@ typedef QVector<KsPlotEntry>	KsComboPlot;
+  * The KsGLWidget class provides a widget for rendering OpenGL graphics used
+  * to plot trace graphs.
+  */
+-class KsGLWidget : public QOpenGLWidget
++class KsGLWidget : public KsGraphWidgetBase
+ {
+ 	Q_OBJECT
+ public:
+@@ -195,11 +201,21 @@ public:
+ 	void freePluginShapes();
+ 
+ protected:
++#ifdef __EMSCRIPTEN__
++	void paintEvent(QPaintEvent *event) override;
++
++	void resizeEvent(QResizeEvent *event) override;
++
++	void resizeGL(int w, int h);
++
++	void paintGL();
++#else
+ 	void initializeGL() override;
+ 
+ 	void resizeGL(int w, int h) override;
+ 
+ 	void paintGL() override;
++#endif
+ 
+ 	void mousePressEvent(QMouseEvent *event) override;
+ 
+diff --git a/src/KsMainWindow.cpp b/src/KsMainWindow.cpp
+index d817469..3362999 100644
+--- a/src/KsMainWindow.cpp
++++ b/src/KsMainWindow.cpp
+@@ -15,8 +15,13 @@
+ #include <pwd.h>
+ 
+ // C++11
++#include <atomic>
+ #include <thread>
+ 
++#ifdef __EMSCRIPTEN__
++#include <emscripten.h>
++#endif
++
+ // Qt
+ #include <QMenu>
+ #include <QFileDialog>
+@@ -42,8 +47,8 @@ KsMainWindow::KsMainWindow(QWidget *parent)
+   _graph(this),
+   _mState(this),
+   _plugins(this),
+-  _capture(this),
+-  _captureLocalServer(this),
++  //_capture(this),
++  //_captureLocalServer(this),
+   _openAction("Open Trace File", this),
+   _appendAction("Append Trace File", this),
+   _restoreSessionAction("Restore Last Session", this),
+@@ -61,7 +66,7 @@ KsMainWindow::KsMainWindow(QWidget *parent)
+   _taskSelectAction("Tasks", this),
+   _managePluginsAction("Manage Plotting plugins", this),
+   _addPluginsAction("Add plugins", this),
+-  _captureAction("Record", this),
++  //_captureAction("Record", this),
+   _addOffcetAction("Add Time Offset", this),
+   _colorAction(this),
+   _colSlider(this),
+@@ -76,13 +81,18 @@ KsMainWindow::KsMainWindow(QWidget *parent)
+   _updateSessionSize(true)
+ {
+ 	setWindowTitle("Kernel Shark");
++#ifdef __EMSCRIPTEN__
++	setWindowFlags(Qt::Window |
++		       Qt::CustomizeWindowHint |
++		       Qt::FramelessWindowHint);
++#endif
+ 	_createActions();
+ 	_createMenus();
+-	_initCapture();
++	//_initCapture();
+ 	_plugins.registerPluginMenues();
+ 
+-	if (geteuid() == 0)
+-		_rootWarning();
++	//if (geteuid() == 0)
++	//	_rootWarning();
+ 
+ 	_splitter.addWidget(&_graph);
+ 	_splitter.addWidget(&_view);
+@@ -158,7 +168,9 @@ KsMainWindow::KsMainWindow(QWidget *parent)
+ 	_lastConfFilePath = _settings.value("confPath").toString();
+ 	_lastPluginFilePath = _settings.value("pluginPath").toString();
+ 
++#ifndef __EMSCRIPTEN__
+ 	_resizeEmpty();
++#endif
+ }
+ 
+ /** Destroy KernelShark Main window. */
+@@ -182,6 +194,7 @@ KsMainWindow::~KsMainWindow()
+ 	_data.clear();
+ 	_plugins.deletePluginDialogs();
+ 
++#if 0
+ 	/*
+ 	 * Do not show error messages if the "capture" process is still
+ 	 * running (Capture dialog is not closed).
+@@ -191,6 +204,7 @@ KsMainWindow::~KsMainWindow()
+ 		_capture.close();
+ 		_capture.waitForFinished();
+ 	}
++#endif
+ 
+ 	/**
+ 	 * The list of shapes generated by the plugins may contain objects
+@@ -344,12 +358,14 @@ void KsMainWindow::_createActions()
+ 	connect(&_addPluginsAction,	&QAction::triggered,
+ 		this,			&KsMainWindow::_pluginAdd);
+ 
++#if 0
+ 	_captureAction.setIcon(QIcon::fromTheme("media-record"));
+ 	_captureAction.setShortcut(tr("Ctrl+R"));
+ 	_captureAction.setStatusTip("Capture trace data");
+ 
+ 	connect(&_captureAction,	&QAction::triggered,
+ 		this,			&KsMainWindow::_record);
++#endif
+ 
+ 	connect(&_addOffcetAction,	&QAction::triggered,
+ 		this,			&KsMainWindow::_offset);
+@@ -415,6 +431,13 @@ void KsMainWindow::_createMenus()
+ 	sessions->addAction(&_exportSessionAction);
+ 	file->addAction(&_quitAction);
+ 
++#ifdef __EMSCRIPTEN__
++	_openAction.setEnabled(false);
++	_appendAction.setEnabled(false);
++	sessions->setEnabled(false);
++	_quitAction.setEnabled(false);
++#endif
++
+ 	/*
+ 	 * Enable the "Append Trace File" menu only in the case of multiple
+ 	 * data streams.
+@@ -431,7 +454,9 @@ void KsMainWindow::_createMenus()
+ 			_appendAction.setEnabled(false);
+ 	};
+ 
++#ifndef __EMSCRIPTEN__
+ 	connect(file,	&QMenu::aboutToShow, lamEnableAppendAction);
++#endif
+ 
+ 	/* Filter menu */
+ 	filter = menuBar()->addMenu("Filter");
+@@ -501,11 +526,17 @@ void KsMainWindow::_createMenus()
+ 	tools->addAction(&_colorAction);
+ 	tools->addAction(&_fullScreenModeAction);
+ 	tools->addSeparator();
+-	tools->addAction(&_captureAction);
++	//tools->addAction(&_captureAction);
+ 	tools->addAction(&_managePluginsAction);
+ 	tools->addAction(&_addPluginsAction);
+ 	tools->addAction(&_addOffcetAction);
+ 
++#ifdef __EMSCRIPTEN__
++	_managePluginsAction.setEnabled(false);
++	_addPluginsAction.setEnabled(false);
++	_addOffcetAction.setEnabled(false);
++#endif
++
+ 	/*
+ 	 * Enable the "Add Time Offset" menu only in the case of multiple
+ 	 * data streams.
+@@ -522,7 +553,9 @@ void KsMainWindow::_createMenus()
+ 			_addOffcetAction.setEnabled(false);
+ 	};
+ 
++#ifndef __EMSCRIPTEN__
+ 	connect(tools,	&QMenu::aboutToShow, lamEnableOffcetAction);
++#endif
+ 
+ 	/* Help menu */
+ 	help = menuBar()->addMenu("Help");
+@@ -1166,6 +1199,7 @@ void KsMainWindow::_pluginAdd()
+ 	}
+ }
+ 
++#if 0
+ void KsMainWindow::_record()
+ {
+ 	bool canDoAsRoot(false);
+@@ -1189,6 +1223,7 @@ void KsMainWindow::_record()
+ 
+ 	_capture.start();
+ }
++#endif
+ 
+ void KsMainWindow::_offset()
+ {
+@@ -1211,15 +1246,15 @@ void KsMainWindow::_setColorPhase(int f)
+ 
+ void KsMainWindow::_changeScreenMode()
+ {
+-	if (isFullScreen()) {
+-		_fullScreenModeAction.setText("Full Screen Mode");
+-		_fullScreenModeAction.setIcon(QIcon::fromTheme("view-fullscreen"));
+-		showNormal();
+-	} else {
+-		_fullScreenModeAction.setText("Exit Full Screen Mode");
+-		_fullScreenModeAction.setIcon(QIcon::fromTheme("view-restore"));
++	//if (isFullScreen()) {
++	//	_fullScreenModeAction.setText("Full Screen Mode");
++	//	_fullScreenModeAction.setIcon(QIcon::fromTheme("view-fullscreen"));
++	//	showNormal();
++	//} else {
++		//_fullScreenModeAction.setText("Exit Full Screen Mode");
++		//_fullScreenModeAction.setIcon(QIcon::fromTheme("view-restore"));
+ 		showFullScreen();
+-	}
++	//}
+ }
+ 
+ void KsMainWindow::_aboutInfo()
+@@ -1253,7 +1288,7 @@ void KsMainWindow::_bugReport()
+ void KsMainWindow::_load(const QString& fileName, bool append)
+ {
+ 	QString pbLabel("Loading    ");
+-	bool loadDone = false;
++	std::atomic_bool loadDone(false);
+ 	struct stat st;
+ 	double shift(.0);
+ 	int ret, sd;
+@@ -1280,6 +1315,11 @@ void KsMainWindow::_load(const QString& fileName, bool append)
+ 
+ 	setWindowTitle("Kernel Shark");
+ 	KsWidgetsLib::KsProgressBar pb(pbLabel);
++	auto setProgress = [this, &pb] (int value) {
++		pb.setValue(value);
++		emit loadProgress(value);
++	};
++	setProgress(0);
+ 	QApplication::processEvents();
+ 
+ 	_view.reset();
+@@ -1314,11 +1354,15 @@ void KsMainWindow::_load(const QString& fileName, bool append)
+ 		 * TODO: The way this progress bar gets updated here is a pure
+ 		 * cheat. See if this can be implemented better.
+ 		*/
+-		if (loadDone)
++		if (loadDone.load())
+ 			break;
+ 
+-		pb.setValue(i);
++		setProgress(i);
++#ifdef __EMSCRIPTEN__
++		emscripten_sleep(150);
++#else
+ 		usleep(150000);
++#endif
+ 	}
+ 
+ 	job.join();
+@@ -1332,13 +1376,14 @@ void KsMainWindow::_load(const QString& fileName, bool append)
+ 	}
+ 
+ 	_view.loadData(&_data);
+-	pb.setValue(175);
++	setProgress(175);
+ 
+ 	_graph.loadData(&_data, !append);
+ 	if (append)
+ 		_graph.cpuReDraw(sd, KsUtils::getCPUList(sd));
+ 
+-	pb.setValue(195);
++	setProgress(195);
++	setProgress(KS_PROGRESS_BAR_MAX);
+ }
+ 
+ /** Load trace data for file. */
+@@ -1478,6 +1523,7 @@ void KsMainWindow::loadSession(const QString &fileName)
+ 	_graph.updateGeom();
+ }
+ 
++#if 0
+ void KsMainWindow::_initCapture()
+ {
+ 	bool canDoAsRoot(false);
+@@ -1594,6 +1640,7 @@ void KsMainWindow::_readSocket()
+ 	in >> fileName;
+ 	loadDataFile(fileName);
+ }
++#endif
+ 
+ void KsMainWindow::_splitterMoved([[maybe_unused]] int pos,
+ 				  [[maybe_unused]] int index)
+diff --git a/src/KsMainWindow.hpp b/src/KsMainWindow.hpp
+index 952a2ad..8dbecfd 100644
+--- a/src/KsMainWindow.hpp
++++ b/src/KsMainWindow.hpp
+@@ -116,6 +116,9 @@ public:
+ 
+ 	void markEntry(const kshark_entry *e, DualMarkerState st);
+ 
++signals:
++	void loadProgress(int value);
++
+ private:
+ 	QSplitter	_splitter;
+ 
+@@ -138,7 +141,7 @@ private:
+ 	KsPluginManager	_plugins;
+ 
+ 	/** The process used to record trace data. */
+-	QProcess	_capture;
++	//QProcess	_capture;
+ 
+ 	/** Local Server used for comunucation with the Capture process. */
+ 	QLocalServer	_captureLocalServer;
+@@ -257,7 +260,7 @@ private:
+ 
+ 	void _pluginAdd();
+ 
+-	void _record();
++	//void _record();
+ 
+ 	void _offset();
+ 
+@@ -271,11 +274,13 @@ private:
+ 
+ 	void _bugReport();
+ 
++#if 0
+ 	void _captureStarted();
+ 
+ 	void _captureError(QProcess::ProcessError error);
+ 
+ 	void _captureErrorMessage(QProcess *capture);
++#endif
+ 
+ 	void _readSocket();
+ 
+@@ -285,7 +290,7 @@ private:
+ 
+ 	void _createMenus();
+ 
+-	void _initCapture();
++	//void _initCapture();
+ 
+ 	void _updateSession();
+ 
+@@ -309,8 +314,8 @@ private:
+ 
+ 	QString _getCacheDir();
+ 
+-private slots:
+-	void _captureFinished(int, QProcess::ExitStatus);
++//private slots:
++//	void _captureFinished(int, QProcess::ExitStatus);
+ };
+ 
+ #endif // _KS_MAINWINDOW_H
+diff --git a/src/KsModels.cpp b/src/KsModels.cpp
+index c8a6ba3..859baf2 100644
+--- a/src/KsModels.cpp
++++ b/src/KsModels.cpp
+@@ -566,7 +566,7 @@ void KsGraphModel::shiftBackward(size_t n)
+  *
+  * @param ts: position in time to be visualized.
+  */
+-void KsGraphModel::jumpTo(size_t ts)
++void KsGraphModel::jumpTo(int64_t ts)
+ {
+ 	beginResetModel();
+ 	ksmodel_jump_to(&_histo, ts);
+diff --git a/src/KsModels.hpp b/src/KsModels.hpp
+index 4e89602..6da5ab0 100644
+--- a/src/KsModels.hpp
++++ b/src/KsModels.hpp
+@@ -294,7 +294,7 @@ public:
+ 
+ 	void shiftBackward(size_t n);
+ 
+-	void jumpTo(size_t ts);
++	void jumpTo(int64_t ts);
+ 
+ 	void zoomOut(double r, int mark = -1);
+ 
+diff --git a/src/KsPlotTools.cpp b/src/KsPlotTools.cpp
+index 8c702e6..ee1f33c 100644
+--- a/src/KsPlotTools.cpp
++++ b/src/KsPlotTools.cpp
+@@ -17,12 +17,40 @@
+ #include <algorithm>
+ #include <vector>
+ 
++#ifdef __EMSCRIPTEN__
++#include <QPainter>
++#include <QPolygon>
++#endif
++
+ // KernelShark
+ #include "KsPlotTools.hpp"
+ 
+ namespace KsPlot
+ {
+ 
++#ifdef __EMSCRIPTEN__
++static QPainter *currentPainter;
++
++void setPainter(QPainter *painter)
++{
++	currentPainter = painter;
++}
++
++static QColor painterColor(const Color &color)
++{
++	return QColor(color.r(), color.g(), color.b());
++}
++
++static QPen painterPen(const Color &color, float width)
++{
++	QPen pen(painterColor(color));
++	pen.setWidthF(width);
++	pen.setCapStyle(Qt::RoundCap);
++	pen.setJoinStyle(Qt::RoundJoin);
++	return pen;
++}
++#endif
++
+ float Color::_frequency = .75;
+ 
+ /**
+@@ -251,6 +279,23 @@ Color getColor(const ColorTable *colors, int id)
+ 	return {};
+ }
+ 
++void drawText(const ksplot_font *font, const Color &color,
++	      int x, int y, const char *text)
++{
++#ifdef __EMSCRIPTEN__
++	if (!currentPainter || !font || !text)
++		return;
++
++	QFont painterFont = currentPainter->font();
++	painterFont.setPixelSize(font->size);
++	currentPainter->setFont(painterFont);
++	currentPainter->setPen(painterColor(color));
++	currentPainter->drawText(x, y, QString::fromUtf8(text));
++#else
++	ksplot_print_text(font, color.color_c_ptr(), x, y, text);
++#endif
++}
++
+ /**
+  * @brief A method to be implemented in the inheriting class. It calculates
+  *	  the distance between the position of the click and the shape. This
+@@ -466,8 +511,15 @@ Point::Point(int x, int y)
+ 
+ void Point::_draw(const Color &col, float size) const
+ {
++#ifdef __EMSCRIPTEN__
++	if (currentPainter && _nPoints == 1) {
++		currentPainter->setPen(painterPen(col, size));
++		currentPainter->drawPoint(QPoint(_points[0].x, _points[0].y));
++	}
++#else
+ 	if (_nPoints == 1)
+ 		ksplot_draw_point(_points, col.color_c_ptr(), size);
++#endif
+ }
+ 
+ /**
+@@ -481,10 +533,17 @@ void Point::_draw(const Color &col, float size) const
+ void drawLine(const Point &a, const Point &b,
+ 	      const Color &col, float size)
+ {
++#ifdef __EMSCRIPTEN__
++	if (currentPainter) {
++		currentPainter->setPen(painterPen(col, size));
++		currentPainter->drawLine(a.x(), a.y(), b.x(), b.y());
++	}
++#else
+ 	ksplot_draw_line(a.point_c_ptr(),
+ 			 b.point_c_ptr(),
+ 			 col.color_c_ptr(),
+ 			 size);
++#endif
+ }
+ 
+ /**
+@@ -533,9 +592,17 @@ Line::Line(const Point &a, const Point &b)
+ 
+ void Line::_draw(const Color &col, float size) const
+ {
++#ifdef __EMSCRIPTEN__
++	if (currentPainter && _nPoints == 2) {
++		currentPainter->setPen(painterPen(col, size));
++		currentPainter->drawLine(_points[0].x, _points[0].y,
++					 _points[1].x, _points[1].y);
++	}
++#else
+ 	if (_nPoints == 2)
+ 		ksplot_draw_line(&_points[0], &_points[1],
+ 				 col.color_c_ptr(), size);
++#endif
+ }
+ 
+ /**
+@@ -549,7 +616,20 @@ Polyline::Polyline(size_t n)
+ 
+ void Polyline::_draw(const Color &col, float size) const
+ {
++#ifdef __EMSCRIPTEN__
++	if (!currentPainter || !_nPoints)
++		return;
++
++	QPolygon polygon;
++	polygon.reserve(_nPoints);
++	for (size_t index = 0; index < _nPoints; ++index)
++		polygon.append(QPoint(_points[index].x, _points[index].y));
++
++	currentPainter->setPen(painterPen(col, size));
++	currentPainter->drawPolyline(polygon);
++#else
+ 	ksplot_draw_polyline(_points, _nPoints, col.color_c_ptr(), size);
++#endif
+ }
+ 
+ /**
+@@ -564,6 +644,19 @@ Polygon::Polygon(size_t n)
+ 
+ void Polygon::_draw(const Color &col, float size) const
+ {
++#ifdef __EMSCRIPTEN__
++	if (!currentPainter || !_nPoints)
++		return;
++
++	QPolygon polygon;
++	polygon.reserve(_nPoints);
++	for (size_t index = 0; index < _nPoints; ++index)
++		polygon.append(QPoint(_points[index].x, _points[index].y));
++
++	currentPainter->setPen(painterPen(col, size));
++	currentPainter->setBrush(_fill ? QBrush(painterColor(col)) : Qt::NoBrush);
++	currentPainter->drawPolygon(polygon);
++#else
+ 	if (_fill)
+ 		ksplot_draw_polygon(_points, _nPoints,
+ 				    col.color_c_ptr(),
+@@ -572,6 +665,7 @@ void Polygon::_draw(const Color &col, float size) const
+ 		ksplot_draw_polygon_contour(_points, _nPoints,
+ 					    col.color_c_ptr(),
+ 					    size);
++#endif
+ }
+ /** The created object will print/draw only the text without the frame. */
+ TextBox::TextBox()
+@@ -659,6 +753,27 @@ void TextBox::_draw(const Color &col, [[maybe_unused]]float size) const
+ 	if (!_font || _text.empty())
+ 		return;
+ 
++#ifdef __EMSCRIPTEN__
++	if (!currentPainter)
++		return;
++
++	QFont font = currentPainter->font();
++	font.setPixelSize(_font->size);
++	currentPainter->setFont(font);
++	currentPainter->setPen(_box._visible ? Qt::black : painterColor(col));
++
++	int baseline;
++	if (_box._visible) {
++		int boxShift = (_box.pointY(0) - _box.pointY(1) - _font->height) / 2;
++		baseline = _box.pointY(0) - _font->base - boxShift;
++	} else {
++		baseline = _box.pointY(0) - _font->base;
++	}
++
++	currentPainter->drawText(_box.pointX(0) + _font->height / 4,
++				 baseline,
++				 QString::fromStdString(_text));
++#else
+ 	if (_box._visible ) {
+ 		int bShift = (_box.pointY(0) - _box.pointY(1) - _font->height) / 2;
+ 		ksplot_print_text(_font, NULL,
+@@ -671,6 +786,7 @@ void TextBox::_draw(const Color &col, [[maybe_unused]]float size) const
+ 				  _box.pointY(0) - _font->base,
+ 				  _text.c_str());
+ 	}
++#endif
+ }
+ 
+ /**
+diff --git a/src/KsPlotTools.hpp b/src/KsPlotTools.hpp
+index 8f53077..ae74917 100644
+--- a/src/KsPlotTools.hpp
++++ b/src/KsPlotTools.hpp
+@@ -22,8 +22,16 @@
+ #include "libkshark-plot.h"
+ #include "libkshark-model.h"
+ 
++#ifdef __EMSCRIPTEN__
++class QPainter;
++#endif
++
+ namespace KsPlot {
+ 
++#ifdef __EMSCRIPTEN__
++void setPainter(QPainter *painter);
++#endif
++
+ /** This class represents a RGB color. */
+ class Color {
+ public:
+@@ -85,6 +93,9 @@ ColorTable streamColorTable();
+ 
+ Color getColor(const ColorTable *colors, int id);
+ 
++void drawText(const ksplot_font *font, const Color &color,
++	      int x, int y, const char *text);
++
+ /** Represents an abstract graphical element. */
+ class PlotObject {
+ public:
+diff --git a/src/KsTraceGraph.cpp b/src/KsTraceGraph.cpp
+index 6b21591..ddb0cf7 100644
+--- a/src/KsTraceGraph.cpp
++++ b/src/KsTraceGraph.cpp
+@@ -37,7 +37,10 @@ KsTraceGraph::KsTraceGraph(QWidget *parent)
+   _glWindow(&_scrollArea),
+   _mState(nullptr),
+   _data(nullptr),
+-  _keyPressed(false)
++	_keyPressed(false),
++	_updateTimer(this),
++	_updateAction(KsWidgetsLib::KsDataWork::AnyWork),
++	_updateFactor(.01)
+ {
+ 	auto lamMakeNavButton = [&](QPushButton *b) {
+ 		b->setMaximumWidth(FONT_WIDTH * 5);
+@@ -104,6 +107,10 @@ KsTraceGraph::KsTraceGraph(QWidget *parent)
+ 	connect(&_glWindow,	&KsGLWidget::stopUpdating,
+ 		this,		&KsTraceGraph::_stopUpdating);
+ 
++	_updateTimer.setInterval(16);
++	connect(&_updateTimer,	&QTimer::timeout,
++		this,		&KsTraceGraph::_updateGraph);
++
+ 	_glWindow.setContextMenuPolicy(Qt::CustomContextMenu);
+ 	connect(&_glWindow,	&QWidget::customContextMenuRequested,
+ 		this,		&KsTraceGraph::_onCustomContextMenu);
+@@ -196,7 +203,6 @@ void KsTraceGraph::_zoomIn()
+ 
+ 	startOfWork(action);
+ 	_updateGraphs(action);
+-	endOfWork(action);
+ }
+ 
+ void KsTraceGraph::_zoomOut()
+@@ -205,7 +211,6 @@ void KsTraceGraph::_zoomOut()
+ 
+ 	startOfWork(action);
+ 	_updateGraphs(action);
+-	endOfWork(action);
+ }
+ 
+ void KsTraceGraph::_quickZoomIn()
+@@ -248,7 +253,6 @@ void KsTraceGraph::_scrollLeft()
+ 
+ 	startOfWork(action);
+ 	_updateGraphs(action);
+-	endOfWork(action);
+ }
+ 
+ void KsTraceGraph::_scrollRight()
+@@ -257,16 +261,20 @@ void KsTraceGraph::_scrollRight()
+ 
+ 	startOfWork(action);
+ 	_updateGraphs(action);
+-	endOfWork(action);
+ }
+ 
+ void KsTraceGraph::_stopUpdating()
+ {
++	if (!_keyPressed)
++		return;
++
+ 	/*
+ 	 * The user is no longer pressing the action button. Reset the
+ 	 * "Key Pressed" flag. This will stop the ongoing user action.
+ 	 */
+ 	_keyPressed = false;
++	_updateTimer.stop();
++	endOfWork(_updateAction);
+ }
+ 
+ QString KsTraceGraph::_t2str(uint64_t sec, uint64_t usec) {
+@@ -476,11 +484,11 @@ void KsTraceGraph::comboReDraw(int nCombos, QVector<int> v)
+ /** Add (and plot) a CPU graph to the existing list of CPU graphs. */
+ void KsTraceGraph::addCPUPlot(int sd, int cpu)
+ {
+-	startOfWork(KsWidgetsLib::KsDataWork::EditPlotList);
+ 	QVector<int> &list = _glWindow._streamPlots[sd]._cpuList;
+ 	if (list.contains(cpu))
+ 		return;
+ 
++	startOfWork(KsWidgetsLib::KsDataWork::EditPlotList);
+ 	list.append(cpu);
+ 	std::sort(list.begin(), list.end());
+ 
+@@ -491,11 +499,11 @@ void KsTraceGraph::addCPUPlot(int sd, int cpu)
+ /** Add (and plot) a Task graph to the existing list of Task graphs. */
+ void KsTraceGraph::addTaskPlot(int sd, int pid)
+ {
+-	startOfWork(KsWidgetsLib::KsDataWork::EditPlotList);
+ 	QVector<int> &list = _glWindow._streamPlots[sd]._taskList;
+ 	if (list.contains(pid))
+ 		return;
+ 
++	startOfWork(KsWidgetsLib::KsDataWork::EditPlotList);
+ 	list.append(pid);
+ 	std::sort(list.begin(), list.end());
+ 
+@@ -506,10 +514,10 @@ void KsTraceGraph::addTaskPlot(int sd, int pid)
+ /** Remove a CPU graph from the existing list of CPU graphs. */
+ void KsTraceGraph::removeCPUPlot(int sd, int cpu)
+ {
+-	startOfWork(KsWidgetsLib::KsDataWork::EditPlotList);
+ 	if (!_glWindow._streamPlots[sd]._cpuList.contains(cpu))
+ 		return;
+ 
++	startOfWork(KsWidgetsLib::KsDataWork::EditPlotList);
+ 	_glWindow._streamPlots[sd]._cpuList.removeAll(cpu);
+ 	_selfUpdate();
+ 	endOfWork(KsWidgetsLib::KsDataWork::EditPlotList);
+@@ -518,10 +526,10 @@ void KsTraceGraph::removeCPUPlot(int sd, int cpu)
+ /** Remove a Task graph from the existing list of Task graphs. */
+ void KsTraceGraph::removeTaskPlot(int sd, int pid)
+ {
+-	startOfWork(KsWidgetsLib::KsDataWork::EditPlotList);
+ 	if (!_glWindow._streamPlots[sd]._taskList.contains(pid))
+ 		return;
+ 
++	startOfWork(KsWidgetsLib::KsDataWork::EditPlotList);
+ 	_glWindow._streamPlots[sd]._taskList.removeAll(pid);
+ 	_selfUpdate();
+ 	endOfWork(KsWidgetsLib::KsDataWork::EditPlotList);
+@@ -653,22 +661,30 @@ bool KsTraceGraph::eventFilter(QObject* obj, QEvent* evt)
+ 
+ void KsTraceGraph::_updateGraphs(KsWidgetsLib::KsDataWork action)
+ {
+-	double k;
+-	int bin;
+-
+-	if (_glWindow.isEmpty())
++	if (_glWindow.isEmpty()) {
++		endOfWork(action);
+ 		return;
++	}
++
++	if (_keyPressed)
++		_stopUpdating();
+ 
+ 	/*
+ 	 * Set the "Key Pressed" flag. The flag will stay set as long as the user
+ 	 * keeps the corresponding action button pressed.
+ 	 */
+ 	_keyPressed = true;
++	_updateAction = action;
++	_updateFactor = .01;
++	_updateGraph();
++	_updateTimer.start();
++}
++
++void KsTraceGraph::_updateGraph()
++{
++	int bin;
+ 
+-	/* Initialize the zooming factor with a small value. */
+-	k = .01;
+-	while (_keyPressed) {
+-		switch (action) {
++	switch (_updateAction) {
+ 		case KsWidgetsLib::KsDataWork::ZoomIn:
+ 			if (_mState->activeMarker()._isSet &&
+ 			    _mState->activeMarker().isVisible()) {
+@@ -677,13 +693,13 @@ void KsTraceGraph::_updateGraphs(KsWidgetsLib::KsDataWork action)
+ 				 * a focus point of the zoom.
+ 				 */
+ 				bin = _mState->activeMarker()._bin;
+-				_glWindow.model()->zoomIn(k, bin);
++				_glWindow.model()->zoomIn(_updateFactor, bin);
+ 			} else {
+ 				/*
+ 				 * The default focus point is the center of the
+ 				 * range interval of the model.
+ 				 */
+-				_glWindow.model()->zoomIn(k);
++				_glWindow.model()->zoomIn(_updateFactor);
+ 			}
+ 
+ 			break;
+@@ -696,13 +712,13 @@ void KsTraceGraph::_updateGraphs(KsWidgetsLib::KsDataWork action)
+ 				 * a focus point of the zoom.
+ 				 */
+ 				bin = _mState->activeMarker()._bin;
+-				_glWindow.model()->zoomOut(k, bin);
++				_glWindow.model()->zoomOut(_updateFactor, bin);
+ 			} else {
+ 				/*
+ 				 * The default focus point is the center of the
+ 				 * range interval of the model.
+ 				 */
+-				_glWindow.model()->zoomOut(k);
++				_glWindow.model()->zoomOut(_updateFactor);
+ 			}
+ 
+ 			break;
+@@ -717,20 +733,18 @@ void KsTraceGraph::_updateGraphs(KsWidgetsLib::KsDataWork action)
+ 
+ 		default:
+ 			return;
+-		}
++	}
+ 
+-		/*
+-		 * As long as the action button is pressed, the zooming factor
+-		 * will grow smoothly until it reaches a maximum value. This
+-		 * will have a visible effect of an accelerating zoom.
+-		 */
+-		if (k < .25)
+-			k  *= 1.02;
++	/*
++	 * As long as the action button is pressed, the zooming factor
++	 * will grow smoothly until it reaches a maximum value. This
++	 * will have a visible effect of an accelerating zoom.
++	 */
++	if (_updateFactor < .25)
++		_updateFactor *= 1.02;
+ 
+-		_mState->updateMarkers(*_data, &_glWindow);
+-		_glWindow.render();
+-		QCoreApplication::processEvents();
+-	}
++	_mState->updateMarkers(*_data, &_glWindow);
++	_glWindow.render();
+ }
+ 
+ void KsTraceGraph::_onCustomContextMenu(const QPoint &point)
+@@ -748,16 +762,20 @@ void KsTraceGraph::_onCustomContextMenu(const QPoint &point)
+ 							  this);
+ 
+ 		connect(entryMenu,	&KsQuickContextMenu::addTaskPlot,
+-			this,		&KsTraceGraph::addTaskPlot);
++			this,		&KsTraceGraph::addTaskPlot,
++			Qt::QueuedConnection);
+ 
+ 		connect(entryMenu,	&KsQuickContextMenu::addCPUPlot,
+-			this,		&KsTraceGraph::addCPUPlot);
++			this,		&KsTraceGraph::addCPUPlot,
++			Qt::QueuedConnection);
+ 
+ 		connect(entryMenu,	&KsQuickContextMenu::removeTaskPlot,
+-			this,		&KsTraceGraph::removeTaskPlot);
++			this,		&KsTraceGraph::removeTaskPlot,
++			Qt::QueuedConnection);
+ 
+ 		connect(entryMenu,	&KsQuickContextMenu::removeCPUPlot,
+-			this,		&KsTraceGraph::removeCPUPlot);
++			this,		&KsTraceGraph::removeCPUPlot,
++			Qt::QueuedConnection);
+ 	} else {
+ 		if (!_glWindow.getPlotInfo(point, &sd, &cpu, &pid))
+ 			return;
+@@ -770,12 +788,12 @@ void KsTraceGraph::_onCustomContextMenu(const QPoint &point)
+ 			KsRmCPUPlotMenu *rmMenu;
+ 			menu = rmMenu = new KsRmCPUPlotMenu(_mState, sd, cpu, this);
+ 
+-			auto lamRmPlot = [&sd, &cpu, this] () {
++			auto lamRmPlot = [sd, cpu, this] () {
+ 				removeCPUPlot(sd, cpu);
+ 			};
+ 
+ 			connect(rmMenu, &KsRmPlotContextMenu::removePlot,
+-				lamRmPlot);
++				this, lamRmPlot, Qt::QueuedConnection);
+ 		}
+ 
+ 		if (pid >= 0) {
+@@ -786,12 +804,12 @@ void KsTraceGraph::_onCustomContextMenu(const QPoint &point)
+ 			KsRmTaskPlotMenu *rmMenu;
+ 			menu = rmMenu = new KsRmTaskPlotMenu(_mState, sd, pid, this);
+ 
+-			auto lamRmPlot = [&sd, &pid, this] () {
++			auto lamRmPlot = [sd, pid, this] () {
+ 				removeTaskPlot(sd, pid);
+ 			};
+ 
+ 			connect(rmMenu, &KsRmPlotContextMenu::removePlot,
+-				lamRmPlot);
++				this, lamRmPlot, Qt::QueuedConnection);
+ 		}
+ 	}
+ 
+@@ -815,6 +833,9 @@ void KsTraceGraph::_onCustomContextMenu(const QPoint &point)
+ 		 */
+ 		global.rx() += FONT_WIDTH;
+ 
+-		menu->exec(global);
++		connect(menu, &QMenu::aboutToHide, menu, [menu] () {
++			QTimer::singleShot(0, menu, &QObject::deleteLater);
++		});
++		menu->popup(global);
+ 	}
+ }
+diff --git a/src/KsTraceGraph.hpp b/src/KsTraceGraph.hpp
+index b1132e0..b99851a 100644
+--- a/src/KsTraceGraph.hpp
++++ b/src/KsTraceGraph.hpp
+@@ -112,6 +112,8 @@ private:
+ 
+ 	void _updateGraphs(KsWidgetsLib::KsDataWork action);
+ 
++	void _updateGraph();
++
+ 	void _onCustomContextMenu(const QPoint &point);
+ 
+ 	QString _t2str(uint64_t sec, uint64_t usec);
+@@ -138,6 +140,12 @@ private:
+ 	KsDataStore 	*_data;
+ 
+ 	bool		 _keyPressed;
++
++	QTimer		 _updateTimer;
++
++	KsWidgetsLib::KsDataWork _updateAction;
++
++	double		 _updateFactor;
+ };
+ 
+ #endif // _KS_TRACEGRAPH_H
+diff --git a/src/KsTraceViewer.cpp b/src/KsTraceViewer.cpp
+index 6efba7d..8923ebf 100644
+--- a/src/KsTraceViewer.cpp
++++ b/src/KsTraceViewer.cpp
+@@ -267,7 +267,7 @@ void KsTraceViewer::_onCustomContextMenu(const QPoint &point)
+ 		 * of the row number in the source model.
+ 		 */
+ 		size_t row = _proxyModel.mapRowFromSource(i.row());
+-		KsQuickContextMenu menu(_mState, _data, row, this);
++		auto *menu = new KsQuickContextMenu(_mState, _data, row, this);
+ 
+ 		/*
+ 		 * Note that this slot was connected to the
+@@ -276,7 +276,7 @@ void KsTraceViewer::_onCustomContextMenu(const QPoint &point)
+ 		 * respect to the frame of this widget.
+ 		 */
+ 		QPoint global = _view.mapToGlobal(point);
+-		global.ry() -= menu.sizeHint().height() / 2;
++		global.ry() -= menu->sizeHint().height() / 2;
+ 
+ 		/*
+ 		 * Shift the menu so that it is not positioned under the mouse.
+@@ -285,13 +285,17 @@ void KsTraceViewer::_onCustomContextMenu(const QPoint &point)
+ 		 */
+ 		global.rx() += FONT_WIDTH;
+ 
+-		connect(&menu,	&KsQuickContextMenu::addTaskPlot,
+-			this,	&KsTraceViewer::addTaskPlot);
++		connect(menu,	&KsQuickContextMenu::addTaskPlot,
++			this,	&KsTraceViewer::addTaskPlot,
++			Qt::QueuedConnection);
+ 
+-		connect(&menu,	&KsQuickMarkerMenu::deselect,
++		connect(menu,	&KsQuickMarkerMenu::deselect,
+ 			this,	&KsTraceViewer::deselect);
+ 
+-		menu.exec(global);
++		connect(menu, &QMenu::aboutToHide, menu, [menu] () {
++			QTimer::singleShot(0, menu, &QObject::deleteLater);
++		});
++		menu->popup(global);
+ 	}
+ }
+ 
+@@ -650,8 +654,13 @@ size_t KsTraceViewer::_searchItems()
+ 		if (columnIndex == KsViewModel::TRACE_VIEW_COL_INFO ||
+ 		    columnIndex == KsViewModel::TRACE_VIEW_COL_AUX)
+ 			_searchItemsST();
++#ifdef __EMSCRIPTEN__
++		else
++			_searchItemsST();
++#else
+ 		else
+ 			_searchItemsMT();
++#endif
+ 	}
+ 
+ 	count = _matchList.count();
+diff --git a/src/KsUtils.cpp b/src/KsUtils.cpp
+index 1f4068b..409e687 100644
+--- a/src/KsUtils.cpp
++++ b/src/KsUtils.cpp
+@@ -14,6 +14,9 @@
+ #include "libkshark-tepdata.h"
+ #include "KsUtils.hpp"
+ #include "KsWidgetsLib.hpp"
++#ifdef __EMSCRIPTEN__
++#include "plugins/KsBuiltinPlugins.hpp"
++#endif
+ 
+ namespace KsUtils {
+ 
+@@ -1057,7 +1060,11 @@ void KsDataStore::setClockOffset(int sd, int64_t offset)
+ KsPluginManager::KsPluginManager(QWidget *parent)
+ : QObject(parent)
+ {
++#ifdef __EMSCRIPTEN__
++	KsBuiltinPlugins::registerPlugins();
++#else
+ 	_loadPluginList(KsUtils::getPluginList());
++#endif
+ }
+ 
+ QVector<kshark_plugin_list *>
+@@ -1192,7 +1199,7 @@ QVector<int> KsPluginManager::getPluginsByStatus(int sd, int status) const
+ 
+ void KsPluginManager::_registerCtrlInterface(kshark_plugin_list *plugin)
+ {
+-	if (!plugin->handle || !plugin->ctrl_interface)
++	if (!plugin->ctrl_interface)
+ 		return;
+ 
+ 	void *dialogPtr = plugin->ctrl_interface(parent());
+diff --git a/src/kernelshark.cpp b/src/kernelshark.cpp
+index 2ec7b1c..38b6683 100644
+--- a/src/kernelshark.cpp
++++ b/src/kernelshark.cpp
+@@ -11,6 +11,11 @@
+ // Qt
+ #include <QApplication>
+ 
++#ifdef __EMSCRIPTEN__
++#include <emscripten/emscripten.h>
++#include <QTimer>
++#endif
++
+ // KernelShark
+ #include "KsCmakeDef.hpp"
+ #include "KsMainWindow.hpp"
+@@ -20,6 +25,39 @@
+ static char *prior_input_file;
+ QStringList appInputFiles;
+ 
++#ifdef __EMSCRIPTEN__
++static KsMainWindow *wasmMainWindow;
++
++EM_JS(void, kernelshark_load_finished, (), {
++	if (Module.kernelsharkLoadFinished)
++		Module.kernelsharkLoadFinished();
++});
++
++EM_JS(void, kernelshark_set_browser_title, (const char *title), {
++	document.title = UTF8ToString(title);
++});
++
++EM_JS(void, kernelshark_set_load_progress, (int value), {
++	if (Module.kernelsharkLoadProgress)
++		Module.kernelsharkLoadProgress(value);
++});
++
++extern "C" EMSCRIPTEN_KEEPALIVE int kernelshark_load_file(const char *fileName)
++{
++	if (!wasmMainWindow || !fileName)
++		return -1;
++
++	auto *window = wasmMainWindow;
++	QString path = QString::fromUtf8(fileName);
++	QTimer::singleShot(0, window, [window, path] () {
++		window->loadDataFile(path);
++		kernelshark_load_finished();
++	});
++
++	return 0;
++}
++#endif
++
+ void usage(const char *prog)
+ {
+ 	printf("Usage: %s\n", prog);
+@@ -47,6 +85,31 @@ static option longOptions[] = {
+ 	{nullptr, 0, nullptr, 0}
+ };
+ 
++
++//#include <iostream>
++#include <dlfcn.h>
++
++extern "C" void __attribute__((no_instrument_function)) __cyg_profile_func_enter(void* this_fn, void* call_site) {
++	//printf("ENTER: %p, from %p\n", this_fn, call_site);
++	Dl_info info;
++	if (dladdr(this_fn, &info) && info.dli_sname) {
++		printf("ENTER: %s. Lib %s\n", info.dli_sname, info.dli_fname);
++	} else {
++		printf("ENTER: unknown function\n");
++	}
++}
++
++extern "C" void __attribute__((no_instrument_function)) __cyg_profile_func_exit(void* this_fn, void* call_site) {
++	//printf("EXIT: %p, from %p\n", this_fn, call_site);
++	Dl_info info;
++	if (dladdr(this_fn, &info) && info.dli_sname) {
++		printf("EXIT: %s. Lib %s\n", info.dli_sname, info.dli_fname);
++	} else {
++		printf("EXIT: unknown function\n");
++	}
++}
++
++
+ int main(int argc, char **argv)
+ {
+ 	QVector<int> cpuPlots, taskPlots;
+@@ -58,8 +121,28 @@ int main(int argc, char **argv)
+ 	QApplication::setDesktopFileName(KS_APP_NAME);
+ 	QApplication a(argc, argv);
+ 
++
+ 	KsMainWindow ks;
++#ifdef __EMSCRIPTEN__
++	wasmMainWindow = &ks;
++	auto lamSetBrowserTitle = [] (const QString &title) {
++		QByteArray utf8 = title.toUtf8();
++		kernelshark_set_browser_title(utf8.constData());
++	};
++	QObject::connect(&ks, &QWidget::windowTitleChanged,
++			 lamSetBrowserTitle);
++	QObject::connect(&ks, &KsMainWindow::loadProgress,
++			 [] (int value) {
++				 kernelshark_set_load_progress(value);
++			 });
++	lamSetBrowserTitle(ks.windowTitle());
++#endif
++
++#ifdef __EMSCRIPTEN__
++	ks.showMaximized();
++#else
+ 	ks.show();
++#endif
+ 
+ 	while ((c = getopt_long(argc, argv, "hvi:a:p:u:s:l",
+ 					    longOptions,
+@@ -79,7 +162,7 @@ int main(int argc, char **argv)
+ 			return 0;
+ 
+ 		case 'v':
+-			printf("%s - %s\n", basename(argv[0]), KS_VERSION_STRING);
++			//printf("%s - %s\n", basename(argv[0]), KS_VERSION_STRING);
+ 			return 0;
+ 
+ 		case 'i':
+@@ -91,11 +174,11 @@ int main(int argc, char **argv)
+ 			break;
+ 
+ 		case 'p':
+-			ks.registerPlugins(QString(optarg));
++			//ks.registerPlugins(QString(optarg));
+ 			break;
+ 
+ 		case 'u':
+-			ks.unregisterPlugins(QString(optarg));
++			//ks.unregisterPlugins(QString(optarg));
+ 			break;
+ 
+ 		case 's':
+diff --git a/src/kernelshark.html b/src/kernelshark.html
+new file mode 100644
+index 0000000..79fd568
+--- /dev/null
++++ b/src/kernelshark.html
+@@ -0,0 +1,186 @@
++<!doctype html>
++<html lang="en-us">
++  <head>
++    <meta charset="utf-8">
++    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
++    <meta name="viewport" content="width=device-width, height=device-height, user-scalable=0">
++
++    <title>kernelshark</title>
++    <style>
++      html, body { padding: 0; margin: 0; overflow: hidden; width: 100%; height: 100%; }
++      canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
++      #qtspinner { position: absolute; inset: 0; z-index: 1; margin: 0; }
++      #dropoverlay {
++        position: absolute;
++        inset: 20px;
++        z-index: 2;
++        display: none;
++        place-items: center;
++        border: 3px dashed #1976a3;
++        background: rgba(245, 251, 253, 0.94);
++        color: #143746;
++        font: 600 24px sans-serif;
++        pointer-events: none;
++      }
++      #dropoverlay.visible { display: grid; }
++      #dropoverlay.error { border-color: #b3261e; color: #8c1d18; }
++      #dropcontent { width: min(520px, calc(100% - 48px)); text-align: center; }
++      #dropprogress { width: 100%; height: 18px; margin-top: 18px; accent-color: #1976a3; }
++    </style>
++  </head>
++  <body onload="init()">
++    <figure style="overflow:visible;" id="qtspinner">
++      <center style="margin-top:1.5em; line-height:150%">
++        <strong>Qt for WebAssembly: kernelshark</strong>
++        <div id="qtstatus"></div>
++        <noscript>JavaScript is disabled. Please enable JavaScript to use this application.</noscript>
++      </center>
++    </figure>
++    <canvas id="qtcanvas"></canvas>
++    <div id="dropoverlay" role="status" aria-live="polite">
++      <div id="dropcontent">
++        <div id="dropmessage"></div>
++        <progress id="dropprogress" max="200" hidden></progress>
++      </div>
++    </div>
++
++    <script type="text/javascript">
++      let qtLoader;
++      let activeTracePath;
++      let dropBusy = false;
++      let dropDepth = 0;
++      let dropSequence = 0;
++
++      function setDropOverlay(text, error = false, progress = null) {
++        const overlay = document.querySelector('#dropoverlay');
++        const progressBar = document.querySelector('#dropprogress');
++        document.querySelector('#dropmessage').textContent = text;
++        progressBar.hidden = progress === null;
++        if (progress !== null)
++          progressBar.value = progress;
++        overlay.classList.toggle('error', error);
++        overlay.classList.toggle('visible', Boolean(text));
++      }
++
++      async function loadDroppedTrace(file) {
++        if (dropBusy)
++          return;
++
++        const module = qtLoader && qtLoader.module();
++        if (!module || qtLoader.status !== 'Running') {
++          setDropOverlay('KernelShark is still starting', true);
++          window.setTimeout(() => setDropOverlay(''), 2500);
++          return;
++        }
++
++        dropBusy = true;
++        const safeName = file.name.replace(/[^A-Za-z0-9._-]/g, '_') || 'trace.dat';
++        const path = `/tmp/kernelshark-drop-${++dropSequence}-${safeName}`;
++
++        try {
++          setDropOverlay(`Loading ${file.name}...`, false, 0);
++          module.FS.writeFile(path, new Uint8Array(await file.arrayBuffer()));
++          module.kernelsharkLoadProgress = function(progress) {
++            const percent = Math.round(progress * 100 / 200);
++            setDropOverlay(`Loading ${file.name}... ${percent}%`, false, progress);
++          };
++          module.kernelsharkLoadFinished = function() {
++            if (activeTracePath)
++              module.FS.unlink(activeTracePath);
++            activeTracePath = path;
++            module.kernelsharkLoadProgress = undefined;
++            dropBusy = false;
++            setDropOverlay('');
++          };
++
++          const result = module.ccall(
++            'kernelshark_load_file', 'number', ['string'], [path]);
++          if (result !== 0)
++            throw new Error('KernelShark rejected the file');
++        } catch (error) {
++          module.kernelsharkLoadFinished = undefined;
++          module.kernelsharkLoadProgress = undefined;
++          try {
++            module.FS.unlink(path);
++          } catch (_) {
++          }
++          setDropOverlay(`Unable to load ${file.name}: ${error}`, true);
++          window.setTimeout(() => setDropOverlay(''), 5000);
++          dropBusy = false;
++        }
++      }
++
++      function installDropHandlers() {
++        window.addEventListener('dragenter', event => {
++          event.preventDefault();
++          event.stopImmediatePropagation();
++          ++dropDepth;
++          if (!dropBusy)
++            setDropOverlay('Drop trace file to open');
++        }, true);
++
++        window.addEventListener('dragover', event => {
++          event.preventDefault();
++          event.stopImmediatePropagation();
++          event.dataTransfer.dropEffect = 'copy';
++        }, true);
++
++        window.addEventListener('dragleave', event => {
++          event.preventDefault();
++          event.stopImmediatePropagation();
++          if (--dropDepth <= 0 && !dropBusy) {
++            dropDepth = 0;
++            setDropOverlay('');
++          }
++        }, true);
++
++        window.addEventListener('drop', event => {
++          event.preventDefault();
++          event.stopImmediatePropagation();
++          dropDepth = 0;
++          const file = event.dataTransfer.files[0];
++          if (file)
++            loadDroppedTrace(file);
++          else
++            setDropOverlay('Drop a trace file from your computer', true);
++        }, true);
++      }
++
++      function init() {
++        const spinner = document.querySelector('#qtspinner');
++        const canvas = document.querySelector('#qtcanvas');
++        const status = document.querySelector('#qtstatus');
++
++        installDropHandlers();
++        qtLoader = QtLoader({
++          canvasElements: [canvas],
++          showLoader: function(loaderStatus) {
++            spinner.style.display = 'block';
++            canvas.style.visibility = 'hidden';
++            status.textContent = loaderStatus + '...';
++          },
++          showError: function(errorText) {
++            status.textContent = errorText;
++            spinner.style.display = 'block';
++            canvas.style.visibility = 'hidden';
++          },
++          showExit: function() {
++            status.textContent = 'Application exit';
++            if (qtLoader.exitCode !== undefined)
++              status.textContent += ' with code ' + qtLoader.exitCode;
++            if (qtLoader.exitText !== undefined)
++              status.textContent += ' (' + qtLoader.exitText + ')';
++            spinner.style.display = 'block';
++            canvas.style.visibility = 'hidden';
++          },
++          showCanvas: function() {
++            spinner.style.display = 'none';
++            canvas.style.visibility = 'visible';
++          },
++        });
++        qtLoader.loadEmscriptenModule('kernelshark');
++      }
++    </script>
++    <script type="text/javascript" src="qtloader.js"></script>
++  </body>
++</html>
+diff --git a/src/libkshark-plot.c b/src/libkshark-plot.c
+index 5fdf4ca..2eb2937 100644
+--- a/src/libkshark-plot.c
++++ b/src/libkshark-plot.c
+@@ -92,6 +92,7 @@ void ksplot_init_opengl(int dpr)
+  */
+ void ksplot_resize_opengl(int width, int height)
+ {
++	return;
+ 	glViewport(0, 0, width, height);
+ 	glMatrixMode(GL_PROJECTION);
+ 	glLoadIdentity();
+diff --git a/src/libkshark-plugin.c b/src/libkshark-plugin.c
+index 2eb3b4a..36ca585 100644
+--- a/src/libkshark-plugin.c
++++ b/src/libkshark-plugin.c
+@@ -252,6 +252,8 @@ kshark_register_plugin(struct kshark_context *kshark_ctx,
+ 		       const char *name,
+ 		       const char *file)
+ {
++	return NULL;
++
+ 	kshark_plugin_load_func init_func, close_func;
+ 	kshark_check_data_func check_func;
+ 	kshark_format_func format_func;
+@@ -381,6 +383,47 @@ kshark_register_plugin(struct kshark_context *kshark_ctx,
+ 	return NULL;
+ }
+ 
++struct kshark_plugin_list *
++kshark_register_static_plugin(struct kshark_context *kshark_ctx,
++			      const struct kshark_plugin_descriptor *descriptor)
++{
++	struct kshark_plugin_list *plugin;
++
++	if (!kshark_ctx || !descriptor || !descriptor->name ||
++	    !descriptor->process_init || !descriptor->process_close)
++		return NULL;
++
++	if (kshark_find_plugin_by_name(kshark_ctx->plugins, descriptor->name))
++		return NULL;
++
++	plugin = calloc(1, sizeof(*plugin));
++	if (!plugin)
++		return NULL;
++
++	plugin->name = strdup(descriptor->name);
++	plugin->file = strdup(descriptor->name);
++	plugin->process_interface = calloc(1, sizeof(*plugin->process_interface));
++	if (!plugin->name || !plugin->file || !plugin->process_interface)
++		goto fail;
++
++	plugin->process_interface->name = strdup(descriptor->name);
++	if (!plugin->process_interface->name)
++		goto fail;
++
++	plugin->process_interface->init = descriptor->process_init;
++	plugin->process_interface->close = descriptor->process_close;
++	plugin->ctrl_interface = descriptor->ctrl_interface;
++	plugin->next = kshark_ctx->plugins;
++	kshark_ctx->plugins = plugin;
++	kshark_ctx->n_plugins++;
++
++	return plugin;
++
++ fail:
++	free_plugin(plugin);
++	return NULL;
++}
++
+ /**
+  * @brief Unrgister a plugin.
+  *
+@@ -392,6 +435,7 @@ void kshark_unregister_plugin(struct kshark_context *kshark_ctx,
+ 			      const char *name,
+ 			      const char *file)
+ {
++	return;
+ 	struct kshark_plugin_list **last;
+ 
+ 	for (last = &kshark_ctx->plugins; *last; last = &(*last)->next) {
+diff --git a/src/libkshark-plugin.h b/src/libkshark-plugin.h
+index 10e5f1b..94493ea 100644
+--- a/src/libkshark-plugin.h
++++ b/src/libkshark-plugin.h
+@@ -30,15 +30,21 @@ extern "C" {
+ 
+ #define MAKE_STR(x)	_MAKE_STR(x)
+ 
++#ifndef KSHARK_PLOT_PLUGIN_INITIALIZER
+ #define KSHARK_PLOT_PLUGIN_INITIALIZER kshark_data_plugin_initializer
++#endif
+ 
++#ifndef KSHARK_PLOT_PLUGIN_DEINITIALIZER
+ #define KSHARK_PLOT_PLUGIN_DEINITIALIZER kshark_data_plugin_deinitializer
++#endif
+ 
+ #define KSHARK_PLOT_PLUGIN_INITIALIZER_NAME MAKE_STR(KSHARK_PLOT_PLUGIN_INITIALIZER)
+ 
+ #define KSHARK_PLOT_PLUGIN_DEINITIALIZER_NAME MAKE_STR(KSHARK_PLOT_PLUGIN_DEINITIALIZER)
+ 
++#ifndef KSHARK_MENU_PLUGIN_INITIALIZER
+ #define KSHARK_MENU_PLUGIN_INITIALIZER kshark_plugin_menu_initializer
++#endif
+ 
+ #define KSHARK_MENU_PLUGIN_INITIALIZER_NAME MAKE_STR(KSHARK_MENU_PLUGIN_INITIALIZER)
+ 
+@@ -58,6 +64,16 @@ extern "C" {
+ 
+ #define KSHARK_INPUT_FORMAT_NAME MAKE_STR(KSHARK_INPUT_FORMAT)
+ 
++#ifdef KSHARK_STATIC_PLUGIN
++#define _KS_PLUGIN_CONTEXT_SYMBOL(plugin, method) \
++	kshark_##plugin##_context_##method
++#define KS_PLUGIN_CONTEXT_SYMBOL(plugin, method) \
++	_KS_PLUGIN_CONTEXT_SYMBOL(plugin, method)
++#define __init KS_PLUGIN_CONTEXT_SYMBOL(KSHARK_STATIC_PLUGIN, init)
++#define __close KS_PLUGIN_CONTEXT_SYMBOL(KSHARK_STATIC_PLUGIN, close)
++#define __get_context KS_PLUGIN_CONTEXT_SYMBOL(KSHARK_STATIC_PLUGIN, get)
++#endif
++
+ struct kshark_data_stream;
+ struct kshark_context;
+ struct kshark_entry;
+@@ -302,6 +318,14 @@ struct kshark_plugin_list {
+ 	struct kshark_dri		*readout_interface;
+ };
+ 
++/** Interfaces supplied by a plugin linked into the application. */
++struct kshark_plugin_descriptor {
++	const char			*name;
++	kshark_plugin_load_func		process_init;
++	kshark_plugin_load_func		process_close;
++	kshark_plugin_ctrl_func	ctrl_interface;
++};
++
+ /** Plugin status identifiers. */
+ enum kshark_plugin_status {
+ 	/** The plugin is enabled. */
+@@ -319,6 +343,10 @@ kshark_register_plugin(struct kshark_context *kshark_ctx,
+ 		       const char *name,
+ 		       const char *file);
+ 
++struct kshark_plugin_list *
++kshark_register_static_plugin(struct kshark_context *kshark_ctx,
++			      const struct kshark_plugin_descriptor *descriptor);
++
+ void kshark_unregister_plugin(struct kshark_context *kshark_ctx,
+ 			      const char *name,
+ 			      const char *file);
+diff --git a/src/libkshark.h b/src/libkshark.h
+index 7656ce9..da54f25 100644
+--- a/src/libkshark.h
++++ b/src/libkshark.h
+@@ -17,6 +17,8 @@
+ #include <string.h>
+ #include <pthread.h>
+ #include <errno.h>
++#include <unistd.h>
++
+ 
+ // Json-C
+ #include <json-c/json.h>
+diff --git a/src/plugins/CMakeLists.txt b/src/plugins/CMakeLists.txt
+index 53c4b2e..654ee48 100644
+--- a/src/plugins/CMakeLists.txt
++++ b/src/plugins/CMakeLists.txt
+@@ -30,9 +30,21 @@ function(BUILD_GUI_PLUGIN)
+ 
+     QT6_WRAP_CPP(plugin_moc ${ADD_PLUGIN_MOC})
+ 
+-    add_library(${ADD_PLUGIN_NAME} SHARED ${plugin_moc} ${ADD_PLUGIN_SOURCE})
+-    set_target_properties(${ADD_PLUGIN_NAME} PROPERTIES PREFIX "plugin-")
+-    target_link_libraries(${ADD_PLUGIN_NAME} kshark kshark-gui)
++    if (EMSCRIPTEN)
++        set(plugin_objects "${ADD_PLUGIN_NAME}-objects")
++        add_library(${plugin_objects} OBJECT ${plugin_moc} ${ADD_PLUGIN_SOURCE})
++        target_compile_definitions(${plugin_objects} PRIVATE
++            KSHARK_STATIC_PLUGIN=${ADD_PLUGIN_NAME}
++            KSHARK_PLOT_PLUGIN_INITIALIZER=kshark_${ADD_PLUGIN_NAME}_data_plugin_initializer
++            KSHARK_PLOT_PLUGIN_DEINITIALIZER=kshark_${ADD_PLUGIN_NAME}_data_plugin_deinitializer
++            KSHARK_MENU_PLUGIN_INITIALIZER=kshark_${ADD_PLUGIN_NAME}_plugin_menu_initializer)
++        target_link_libraries(${plugin_objects} PRIVATE kshark kshark-gui)
++        target_sources(${KS_APP_NAME} PRIVATE $<TARGET_OBJECTS:${plugin_objects}>)
++    else ()
++        add_library(${ADD_PLUGIN_NAME} SHARED ${plugin_moc} ${ADD_PLUGIN_SOURCE})
++        set_target_properties(${ADD_PLUGIN_NAME} PROPERTIES PREFIX "plugin-")
++        target_link_libraries(${ADD_PLUGIN_NAME} kshark kshark-gui)
++    endif ()
+ 
+ endfunction()
+ 
+@@ -65,9 +77,11 @@ BUILD_GUI_PLUGIN(NAME missed_events
+ 		 SOURCE missed_events.c MissedEvents.cpp)
+ list(APPEND PLUGIN_LIST "missed_events")
+ 
+-install(TARGETS ${PLUGIN_LIST}
++if (NOT EMSCRIPTEN)
++    install(TARGETS ${PLUGIN_LIST}
+         LIBRARY DESTINATION ${KS_PLUGIN_INSTALL_PREFIX}
+         COMPONENT kernelshark)
++endif ()
+ 
+ install(FILES "${KS_DIR}/src/plugins/common_sched.h"
+         DESTINATION "${KS_INCLUDS_DESTINATION}/plugins"
+diff --git a/src/plugins/KsBuiltinPlugins.cpp b/src/plugins/KsBuiltinPlugins.cpp
+new file mode 100644
+index 0000000..c47adab
+--- /dev/null
++++ b/src/plugins/KsBuiltinPlugins.cpp
+@@ -0,0 +1,64 @@
++// SPDX-License-Identifier: LGPL-2.1
++
++#include "plugins/KsBuiltinPlugins.hpp"
++#include "libkshark.h"
++#include "libkshark-plugin.h"
++
++extern "C" {
++int kshark_sched_events_data_plugin_initializer(kshark_data_stream *stream);
++int kshark_sched_events_data_plugin_deinitializer(kshark_data_stream *stream);
++void *kshark_sched_events_plugin_menu_initializer(void *guiPtr);
++
++int kshark_event_field_plot_data_plugin_initializer(kshark_data_stream *stream);
++int kshark_event_field_plot_data_plugin_deinitializer(kshark_data_stream *stream);
++void *kshark_event_field_plot_plugin_menu_initializer(void *guiPtr);
++
++int kshark_latency_plot_data_plugin_initializer(kshark_data_stream *stream);
++int kshark_latency_plot_data_plugin_deinitializer(kshark_data_stream *stream);
++void *kshark_latency_plot_plugin_menu_initializer(void *guiPtr);
++
++int kshark_kvm_combo_data_plugin_initializer(kshark_data_stream *stream);
++int kshark_kvm_combo_data_plugin_deinitializer(kshark_data_stream *stream);
++void *kshark_kvm_combo_plugin_menu_initializer(void *guiPtr);
++
++int kshark_missed_events_data_plugin_initializer(kshark_data_stream *stream);
++int kshark_missed_events_data_plugin_deinitializer(kshark_data_stream *stream);
++}
++
++namespace {
++
++const kshark_plugin_descriptor plugins[] = {
++	{"sched_events",
++	 kshark_sched_events_data_plugin_initializer,
++	 kshark_sched_events_data_plugin_deinitializer,
++	 kshark_sched_events_plugin_menu_initializer},
++	{"event_field_plot",
++	 kshark_event_field_plot_data_plugin_initializer,
++	 kshark_event_field_plot_data_plugin_deinitializer,
++	 kshark_event_field_plot_plugin_menu_initializer},
++	{"latency_plot",
++	 kshark_latency_plot_data_plugin_initializer,
++	 kshark_latency_plot_data_plugin_deinitializer,
++	 kshark_latency_plot_plugin_menu_initializer},
++	{"kvm_combo",
++	 kshark_kvm_combo_data_plugin_initializer,
++	 kshark_kvm_combo_data_plugin_deinitializer,
++	 kshark_kvm_combo_plugin_menu_initializer},
++	{"missed_events",
++	 kshark_missed_events_data_plugin_initializer,
++	 kshark_missed_events_data_plugin_deinitializer,
++	 nullptr},
++};
++
++}
++
++void KsBuiltinPlugins::registerPlugins()
++{
++	kshark_context *ksharkCtx(nullptr);
++
++	if (!kshark_instance(&ksharkCtx))
++		return;
++
++	for (const auto &plugin: plugins)
++		kshark_register_static_plugin(ksharkCtx, &plugin);
++}
+\ No newline at end of file
+diff --git a/src/plugins/KsBuiltinPlugins.hpp b/src/plugins/KsBuiltinPlugins.hpp
+new file mode 100644
+index 0000000..01761a0
+--- /dev/null
++++ b/src/plugins/KsBuiltinPlugins.hpp
+@@ -0,0 +1,12 @@
++// SPDX-License-Identifier: LGPL-2.1
++
++#ifndef _KS_BUILTIN_PLUGINS_H
++#define _KS_BUILTIN_PLUGINS_H
++
++namespace KsBuiltinPlugins {
++
++void registerPlugins();
++
++}
++
++#endif // _KS_BUILTIN_PLUGINS_H
+\ No newline at end of file
+diff --git a/src/plugins/sched_events.c b/src/plugins/sched_events.c
+index e7dd2b1..4c355da 100644
+--- a/src/plugins/sched_events.c
++++ b/src/plugins/sched_events.c
+@@ -13,6 +13,7 @@
+ #include <stdlib.h>
+ #include <stdio.h>
+ 
++typedef void cpu_set_t;
+ // trace-cmd
+ #include <trace-cmd.h>
+ 
+diff --git a/tests/libkshark-gui-tests.cpp b/tests/libkshark-gui-tests.cpp
+index 031e836..5e8f3aa 100644
+--- a/tests/libkshark-gui-tests.cpp
++++ b/tests/libkshark-gui-tests.cpp
+@@ -286,6 +286,13 @@ BOOST_AUTO_TEST_CASE(GraphModel)
+ 	BOOST_CHECK(abs(model.histo()->min - data.rows()[0]->ts) < model.histo()->bin_size);
+ 	BOOST_CHECK(abs(model.histo()->max - data.rows()[N_RECORDS_TEST1 - 1]->ts) < model.histo()->bin_size);
+ 
++	int64_t target = data.rows()[N_RECORDS_TEST1 - 1]->ts;
++	BOOST_REQUIRE(target > 0xffffffffLL);
++	model.quickZoomIn(100);
++	model.jumpTo(target);
++	BOOST_CHECK(target >= model.histo()->min);
++	BOOST_CHECK(target <= model.histo()->max);
++
+ 	model.reset();
+ 	BOOST_CHECK_EQUAL(model.rowCount({}), 0);
+ }
