@@ -1,0 +1,28 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 24,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "wasm-release",
+      "displayName": "KernelShark WebAssembly release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/wasm-release",
+      "cacheVariables": {
+        "KS_BUILD_TYPE": "MinSizeRel"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "wasm-release",
+      "configurePreset": "wasm-release",
+      "targets": [
+        "kernelshark-dist"
+      ]
+    }
+  ]
+}
