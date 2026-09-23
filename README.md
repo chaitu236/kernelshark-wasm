@@ -20,28 +20,23 @@ the current scope.
 Build the reusable toolchain image:
 
 ```bash
-docker build \
-    --file containers/Builder.Dockerfile \
-    --tag kernelshark-wasm-builder .
+./build_container.sh
 ```
 
 Configure and build the superbuild:
 
 ```bash
-docker run --rm \
-    --user "$(id -u):$(id -g)" \
-    --volume "$PWD:/workspace" \
-    --workdir /workspace \
-    kernelshark-wasm-builder \
-    cmake --preset wasm-release
-
-docker run --rm \
-    --user "$(id -u):$(id -g)" \
-    --volume "$PWD:/workspace" \
-    --workdir /workspace \
-    kernelshark-wasm-builder \
-    cmake --build --preset wasm-release
+./build.sh
 ```
+
+Both scripts can use a different Docker-compatible command or image name:
+
+```bash
+DOCKER=podman BUILDER_IMAGE=example/kernelshark-wasm-builder ./build_container.sh
+DOCKER=podman BUILDER_IMAGE=example/kernelshark-wasm-builder ./build.sh
+```
+
+`build.sh` also accepts `CMAKE_PRESET` and `BUILD_JOBS` environment overrides.
 
 Artifacts are written to:
 
