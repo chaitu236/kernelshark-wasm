@@ -7,7 +7,7 @@ DOCKER=${DOCKER:-docker}
 BUILDER_IMAGE=${BUILDER_IMAGE:-kernelshark-wasm-builder}
 
 exec "$DOCKER" build \
-	--file "$ROOT/containers/Builder.Dockerfile" \
+	--file "$ROOT/containers/builder/Dockerfile" \
 	--tag "$BUILDER_IMAGE" \
 	"$@" \
 	"$ROOT"

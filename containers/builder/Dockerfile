@@ -142,7 +142,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=qt-builder /opt/qt /opt/qt
-COPY containers/entrypoint.sh /usr/local/bin/kernelshark-wasm-entrypoint
+COPY containers/builder/entrypoint.sh /usr/local/bin/kernelshark-wasm-entrypoint
 
 RUN chmod 0755 /usr/local/bin/kernelshark-wasm-entrypoint
 

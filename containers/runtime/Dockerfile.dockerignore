@@ -1,0 +1,8 @@
+**
+!containers/
+!containers/runtime/
+!containers/runtime/nginx.conf
+!out/
+!out/wasm-release/
+!out/wasm-release/dist/
+!out/wasm-release/dist/**

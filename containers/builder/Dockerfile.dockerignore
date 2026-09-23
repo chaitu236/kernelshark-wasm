@@ -1,0 +1,4 @@
+**
+!containers/
+!containers/builder/
+!containers/builder/entrypoint.sh

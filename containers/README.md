@@ -1,26 +1,9 @@
-# Builder image
+# Container images
 
-`Builder.Dockerfile` creates the build environment used by the CMake
-superbuild. It pins Emscripten 3.1.14, verifies the Qt 6.4.2 source archive,
-and installs matching host and thread-enabled WebAssembly Qt builds.
+- [`builder/`](builder/) contains the pinned Emscripten and threaded Qt build
+  environment used by `build.sh`.
+- [`runtime/`](runtime/) contains the unprivileged nginx image that serves the
+  generated files from `out/wasm-release/dist/`.
 
-Build it from the repository root:
-
-```bash
-docker build \
-    --file containers/Builder.Dockerfile \
-    --tag kernelshark-wasm-builder .
-```
-
-The Qt layers are intentionally expensive. Rebuilding application dependencies
-does not rebuild the image unless the Dockerfile or its inputs change.
-
-The final image exports:
-
-```text
-EMSDK=/emsdk
-QT_HOST_PATH=/opt/qt/6.4.2/host
-QT_WASM=/opt/qt/6.4.2/wasm-threaded
-```
-
-Its entrypoint activates Emscripten and then executes the supplied command.
+Use `./build_container.sh` for the builder image and `./build_runtime.sh` for
+the runtime image.
