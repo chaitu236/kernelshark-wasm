@@ -2,6 +2,8 @@ foreach(_ks_required_variable
         KS_SOURCE_DIR
         KS_DIST_DIR
         KS_QT_LOADER
+        KS_ICON_SOURCE
+        KS_ICON_LICENSE_SOURCE
         KS_GZIP_EXECUTABLE)
     if(NOT DEFINED ${_ks_required_variable})
         message(FATAL_ERROR "${_ks_required_variable} is required")
@@ -29,6 +31,16 @@ endforeach()
 file(COPY_FILE
     "${KS_QT_LOADER}"
     "${KS_DIST_DIR}/qtloader.js"
+    ONLY_IF_DIFFERENT)
+
+file(COPY_FILE
+    "${KS_ICON_SOURCE}"
+    "${KS_DIST_DIR}/favicon.svg"
+    ONLY_IF_DIFFERENT)
+
+file(COPY_FILE
+    "${KS_ICON_LICENSE_SOURCE}"
+    "${KS_DIST_DIR}/favicon-license.txt"
     ONLY_IF_DIFFERENT)
 
 foreach(_ks_artifact IN ITEMS

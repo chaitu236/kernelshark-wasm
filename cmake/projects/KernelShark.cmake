@@ -45,6 +45,8 @@ ExternalProject_Add_Step(kernelshark collect
         "-DKS_SOURCE_DIR=<SOURCE_DIR>/bin"
         "-DKS_DIST_DIR=${KS_DIST_DIR}"
         "-DKS_QT_LOADER=${KS_QT_LOADER}"
+        "-DKS_ICON_SOURCE=<SOURCE_DIR>/icons/KS_icon_shark.svg"
+        "-DKS_ICON_LICENSE_SOURCE=<SOURCE_DIR>/icons/CC_BY-4.0"
         "-DKS_GZIP_EXECUTABLE=${KS_GZIP_EXECUTABLE}"
         -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CollectArtifacts.cmake"
     DEPENDEES build

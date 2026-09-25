@@ -15,6 +15,8 @@ for artifact in \
 	kernelshark.wasm.gz \
 	kernelshark.worker.js \
 	kernelshark.worker.js.gz \
+	favicon.svg \
+	favicon-license.txt \
 	qtloader.js; do
 	if [[ ! -f "$DIST_DIR/$artifact" ]]; then
 		echo "Missing build artifact: $DIST_DIR/$artifact" >&2
