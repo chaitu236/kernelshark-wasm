@@ -1,0 +1,35 @@
+diff --git a/src/KsMainWindow.cpp b/src/KsMainWindow.cpp
+index e4215e3..18e112f 100644
+--- a/src/KsMainWindow.cpp
++++ b/src/KsMainWindow.cpp
+@@ -542,7 +542,6 @@ void KsMainWindow::_createMenus()
+ #ifdef __EMSCRIPTEN__
+ 	_managePluginsAction.setEnabled(false);
+ 	_addPluginsAction.setEnabled(false);
+-	_addOffcetAction.setEnabled(false);
+ #endif
+ 
+ 	/*
+@@ -561,9 +560,7 @@ void KsMainWindow::_createMenus()
+ 			_addOffcetAction.setEnabled(false);
+ 	};
+ 
+-#ifndef __EMSCRIPTEN__
+ 	connect(tools,	&QMenu::aboutToShow, lamEnableOffcetAction);
+-#endif
+ 
+ 	/* Help menu */
+ 	help = menuBar()->addMenu("Help");
+diff --git a/src/KsWidgetsLib.cpp b/src/KsWidgetsLib.cpp
+index 95402f7..10ca2bb 100644
+--- a/src/KsWidgetsLib.cpp
++++ b/src/KsWidgetsLib.cpp
+@@ -232,7 +232,7 @@ KsTimeOffsetDialog::KsTimeOffsetDialog(QWidget *parent) : QDialog(parent)
+ 		for (auto const &sd: streamIds)
+ 			if (sd != 0) {
+ 				streamName = KsUtils::streamDescription(kshark_ctx->stream[sd]);
+-				_streamCombo.addItem(streamName);
++				_streamCombo.addItem(streamName, sd);
+ 			}
+ 
+ 		layout()->addWidget(&_streamCombo);
