@@ -1,0 +1,95 @@
+diff --git a/src/KsMainWindow.cpp b/src/KsMainWindow.cpp
+index 3362999..5b410cf 100644
+--- a/src/KsMainWindow.cpp
++++ b/src/KsMainWindow.cpp
+@@ -20,6 +20,11 @@
+ 
+ #ifdef __EMSCRIPTEN__
+ #include <emscripten.h>
++
++EM_JS(void, kernelshark_open_file_picker, (), {
++	if (globalThis.kernelsharkOpenFilePicker)
++		globalThis.kernelsharkOpenFilePicker();
++});
+ #endif
+ 
+ // Qt
+@@ -432,7 +437,6 @@ void KsMainWindow::_createMenus()
+ 	file->addAction(&_quitAction);
+ 
+ #ifdef __EMSCRIPTEN__
+-	_openAction.setEnabled(false);
+ 	_appendAction.setEnabled(false);
+ 	sessions->setEnabled(false);
+ 	_quitAction.setEnabled(false);
+@@ -620,6 +624,9 @@ void KsMainWindow::markEntry(const kshark_entry *e, DualMarkerState st)
+ 
+ void KsMainWindow::_open()
+ {
++#ifdef __EMSCRIPTEN__
++	kernelshark_open_file_picker();
++#else
+ 	QString fileName;
+ 
+ 	fileName = KsUtils::getFile(this, "Open File",
+@@ -628,6 +635,7 @@ void KsMainWindow::_open()
+ 
+ 	if (!fileName.isEmpty())
+ 		loadDataFile(fileName);
++#endif
+ }
+ 
+ void KsMainWindow::_append()
+diff --git a/src/kernelshark.html b/src/kernelshark.html
+index 79fd568..d3af186 100644
+--- a/src/kernelshark.html
++++ b/src/kernelshark.html
+@@ -37,6 +37,7 @@
+       </center>
+     </figure>
+     <canvas id="qtcanvas"></canvas>
++    <input id="tracefilepicker" type="file" hidden>
+     <div id="dropoverlay" role="status" aria-live="polite">
+       <div id="dropcontent">
+         <div id="dropmessage"></div>
+@@ -62,7 +63,7 @@
+         overlay.classList.toggle('visible', Boolean(text));
+       }
+ 
+-      async function loadDroppedTrace(file) {
++      async function loadTraceFile(file) {
+         if (dropBusy)
+           return;
+ 
+@@ -110,7 +111,22 @@
+         }
+       }
+ 
++      function kernelsharkOpenFilePicker() {
++        if (dropBusy)
++          return;
++
++        const picker = document.querySelector('#tracefilepicker');
++        picker.value = '';
++        picker.click();
++      }
++
+       function installDropHandlers() {
++        document.querySelector('#tracefilepicker').addEventListener('change', event => {
++          const file = event.target.files[0];
++          if (file)
++            loadTraceFile(file);
++        });
++
+         window.addEventListener('dragenter', event => {
+           event.preventDefault();
+           event.stopImmediatePropagation();
+@@ -140,7 +156,7 @@
+           dropDepth = 0;
+           const file = event.dataTransfer.files[0];
+           if (file)
+-            loadDroppedTrace(file);
++            loadTraceFile(file);
+           else
+             setDropOverlay('Drop a trace file from your computer', true);
+         }, true);
