@@ -1,0 +1,19 @@
+diff --git a/src/libkshark-model.c b/src/libkshark-model.c
+index c6dce5e..7bc64cd 100644
+--- a/src/libkshark-model.c
++++ b/src/libkshark-model.c
+@@ -192,7 +192,13 @@ static size_t ksmodel_set_lower_edge(struct kshark_trace_histo *histo)
+ 						0,
+ 						histo->data_size - 1);
+ 
+-	assert(row != BSEARCH_ALL_SMALLER);
++	if (row == BSEARCH_ALL_SMALLER) {
++		/* All entries are below the range. */
++		histo->map[LOB(histo)] = 0;
++		histo->bin_count[LOB(histo)] = histo->data_size;
++		histo->map[0] = KS_EMPTY_BIN;
++		return histo->data_size - 1;
++	}
+ 
+ 	if (row == BSEARCH_ALL_GREATER || row == 0) {
+ 		/* Lower Overflow bin is empty. */
