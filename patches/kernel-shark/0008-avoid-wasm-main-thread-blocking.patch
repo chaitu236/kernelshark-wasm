@@ -1,0 +1,253 @@
+diff --git a/src/KsMainWindow.cpp b/src/KsMainWindow.cpp
+index 18e112f..b0ee367 100644
+--- a/src/KsMainWindow.cpp
++++ b/src/KsMainWindow.cpp
+@@ -33,6 +33,10 @@ EM_JS(void, kernelshark_append_file_picker, (), {
+ #endif
+ 
+ // Qt
++#ifdef __EMSCRIPTEN__
++#include <QThread>
++#include <QTimer>
++#endif
+ #include <QMenu>
+ #include <QFileDialog>
+ #include <QMenuBar>
+@@ -1298,13 +1302,13 @@ void KsMainWindow::_bugReport()
+ 	QDesktopServices::openUrl(bugs);
+ }
+ 
+-void KsMainWindow::_load(const QString& fileName, bool append)
++void KsMainWindow::_load(const QString& fileName, bool append,
++			 std::function<void()> completed)
+ {
+ 	QString pbLabel("Loading    ");
+-	std::atomic_bool loadDone(false);
+ 	struct stat st;
+ 	double shift(.0);
+-	int ret, sd;
++	int ret;
+ 
+ 	ret = stat(fileName.toStdString().c_str(), &st);
+ 	if (ret != 0) {
+@@ -1313,6 +1317,7 @@ void KsMainWindow::_load(const QString& fileName, bool append)
+ 		text.append(fileName);
+ 		text.append(".");
+ 		_error(text, "loadDataErr1", true);
++		completed();
+ 
+ 		return;
+ 	}
+@@ -1327,9 +1332,14 @@ void KsMainWindow::_load(const QString& fileName, bool append)
+ 	}
+ 
+ 	setWindowTitle("Kernel Shark");
+-	KsWidgetsLib::KsProgressBar pb(pbLabel);
+-	auto setProgress = [this, &pb] (int value) {
+-		pb.setValue(value);
++#ifdef __EMSCRIPTEN__
++	auto *pb = new KsWidgetsLib::KsProgressBar(pbLabel, this);
++#else
++	KsWidgetsLib::KsProgressBar progressBar(pbLabel);
++	auto *pb = &progressBar;
++#endif
++	auto setProgress = [this, pb] (int value) {
++		pb->setValue(value);
+ 		emit loadProgress(value);
+ 	};
+ 	setProgress(0);
+@@ -1339,28 +1349,72 @@ void KsMainWindow::_load(const QString& fileName, bool append)
+ 	if (!append)
+ 		_graph.reset();
+ 
+-	auto lamLoadJob = [&, this] () {
+-		QVector<kshark_dpi *> v;
++	QVector<kshark_dpi *> plugins;
++	if (!append) {
+ 		for (auto const p: _plugins.getUserPlugins()) {
+ 			if (p->process_interface)
+-				v.append(p->process_interface);
++				plugins.append(p->process_interface);
+ 		}
++	}
+ 
+-		sd = _data.loadDataFile(fileName, v);
+-		loadDone = true;
++	auto loadJob = [this, fileName, append, shift, plugins] () {
++		if (append)
++			return _data.appendDataFile(fileName, shift);
++
++		return _data.loadDataFile(fileName, plugins);
+ 	};
+ 
+-	auto lamAppendJob = [&, this] () {
+-		sd = _data.appendDataFile(fileName, shift);
+-		loadDone = true;
++	auto finishLoad = [this, fileName, append, pb, setProgress,
++			   completed] (int sd) {
++		if (sd < 0 || !_data.size()) {
++			QString text("File ");
++
++			text.append(fileName);
++			text.append(" contains no data.");
++			_error(text, "loadDataErr2", true);
++		}
++
++		_view.loadData(&_data);
++		setProgress(175);
++
++		_graph.loadData(&_data, !append);
++		if (append)
++			_graph.cpuReDraw(sd, KsUtils::getCPUList(sd));
++
++		setProgress(195);
++		setProgress(KS_PROGRESS_BAR_MAX);
++#ifdef __EMSCRIPTEN__
++		pb->deleteLater();
++#endif
++		completed();
+ 	};
+ 
+-	std::thread job;
+-	if (append) {
+-		job = std::thread(lamAppendJob);
+-	} else {
+-		job = std::thread(lamLoadJob);
+-	}
++#ifdef __EMSCRIPTEN__
++	auto *progressTimer = new QTimer(pb);
++	connect(progressTimer, &QTimer::timeout,
++		[this, pb, progress = 1] () mutable {
++			if (progress < 160) {
++				pb->setValue(progress);
++				emit loadProgress(progress++);
++			}
++		});
++	progressTimer->start(150);
++
++	auto *job = QThread::create([this, loadJob, finishLoad] () {
++		int sd = loadJob();
++		QMetaObject::invokeMethod(this,
++			[finishLoad, sd] () { finishLoad(sd); },
++			Qt::QueuedConnection);
++	});
++	connect(job, &QThread::finished, job, &QObject::deleteLater);
++	job->start();
++#else
++	std::atomic_bool loadDone(false);
++	int sd;
++	std::thread job([&] () {
++		sd = loadJob();
++		loadDone = true;
++	});
+ 
+ 	for (int i = 0; i < 160; ++i) {
+ 		/*
+@@ -1371,40 +1425,22 @@ void KsMainWindow::_load(const QString& fileName, bool append)
+ 			break;
+ 
+ 		setProgress(i);
+-#ifdef __EMSCRIPTEN__
+-		emscripten_sleep(150);
+-#else
+ 		usleep(150000);
+-#endif
+ 	}
+ 
+ 	job.join();
+-
+-	if (sd < 0 || !_data.size()) {
+-		QString text("File ");
+-
+-		text.append(fileName);
+-		text.append(" contains no data.");
+-		_error(text, "loadDataErr2", true);
+-	}
+-
+-	_view.loadData(&_data);
+-	setProgress(175);
+-
+-	_graph.loadData(&_data, !append);
+-	if (append)
+-		_graph.cpuReDraw(sd, KsUtils::getCPUList(sd));
+-
+-	setProgress(195);
+-	setProgress(KS_PROGRESS_BAR_MAX);
++	finishLoad(sd);
++#endif
+ }
+ 
+ /** Load trace data for file. */
+ void KsMainWindow::loadDataFile(const QString& fileName)
+ {
+ 	_mState.reset();
+-	_load(fileName, false);
+-	setWindowTitle("Kernel Shark (" + fileName + ")");
++	_load(fileName, false, [this, fileName] () {
++		setWindowTitle("Kernel Shark (" + fileName + ")");
++		emit loadFinished();
++	});
+ }
+ 
+ /** Append trace data for file. */
+@@ -1420,10 +1456,11 @@ void KsMainWindow::appendDataFile(const QString& fileName)
+ 	if (rowB >= 0)
+ 		eMarkB = _data.rows()[rowB];
+ 
+-	_load(fileName, true);
+-
+-	markEntry(eMarkA, DualMarkerState::A);
+-	markEntry(eMarkB, DualMarkerState::B);
++	_load(fileName, true, [this, eMarkA, eMarkB] () {
++		markEntry(eMarkA, DualMarkerState::A);
++		markEntry(eMarkB, DualMarkerState::B);
++		emit loadFinished();
++	});
+ }
+ 
+ void KsMainWindow::_error(const QString &mesg,
+diff --git a/src/KsMainWindow.hpp b/src/KsMainWindow.hpp
+index 8dbecfd..98f2841 100644
+--- a/src/KsMainWindow.hpp
++++ b/src/KsMainWindow.hpp
+@@ -119,6 +119,8 @@ public:
+ signals:
+ 	void loadProgress(int value);
+ 
++	void loadFinished();
++
+ private:
+ 	QSplitter	_splitter;
+ 
+@@ -216,7 +218,8 @@ private:
+ 
+ 	bool	_updateSessionSize;
+ 
+-	void _load(const QString& fileName, bool append);
++	void _load(const QString& fileName, bool append,
++		   std::function<void()> completed);
+ 
+ 	void _open();
+ 
+diff --git a/src/kernelshark.cpp b/src/kernelshark.cpp
+index 8e4751a..fa2be01 100644
+--- a/src/kernelshark.cpp
++++ b/src/kernelshark.cpp
+@@ -55,8 +55,6 @@ extern "C" EMSCRIPTEN_KEEPALIVE int kernelshark_load_file(const char *fileName,
+ 			window->appendDataFile(path);
+ 		else
+ 			window->loadDataFile(path);
+-
+-		kernelshark_load_finished();
+ 	});
+ 
+ 	return 0;
+@@ -140,6 +138,8 @@ int main(int argc, char **argv)
+ 			 [] (int value) {
+ 				 kernelshark_set_load_progress(value);
+ 			 });
++	QObject::connect(&ks, &KsMainWindow::loadFinished,
++			 [] () { kernelshark_load_finished(); });
+ 	lamSetBrowserTitle(ks.windowTitle());
+ #endif
+ 
