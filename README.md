@@ -43,7 +43,23 @@ Artifacts are written to:
 
 ```text
 out/wasm-release/dist/
+├── kernelshark.html                     # not hashed; contains the resulting hash
+├── asset-version.txt                    # resulting bundle hash
+├── favicon-license.txt                  # distribution metadata; not hashed
+└── assets/<sha256>/
+    ├── favicon.svg                      # hash input
+    ├── kernelshark.js                   # hash input
+    ├── kernelshark.js.gz                # generated representation; not hashed
+    ├── kernelshark.wasm                 # hash input
+    ├── kernelshark.wasm.br              # generated representation; not hashed
+    ├── kernelshark.wasm.gz              # generated representation; not hashed
+    ├── kernelshark.worker.js            # hash input
+    ├── kernelshark.worker.js.gz         # generated representation; not hashed
+    └── qtloader.js                      # hash input
 ```
+
+The SHA-256 directory is calculated from the five files marked `hash input`.
+The root HTML is then regenerated with references to that directory.
 
 ## Build and run the application image
 
@@ -67,7 +83,12 @@ Brotli-11 WebAssembly artifact when supported, uses the `.gz` files generated
 by the superbuild as a compatibility fallback, and adds the
 `Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` headers required
 by WebAssembly pthreads. Raw artifacts remain available for clients that do not
-advertise Brotli or gzip support.
+advertise Brotli or gzip support. Nginx serves the root HTML with `no-cache`
+and versioned assets with a one-year `immutable` cache policy.
+
+Deploy the runtime image atomically so clients see either the complete old
+bundle or the complete new bundle. A non-atomic rolling deployment must instead
+retain older asset directories until no served HTML can reference them.
 
 Override the runtime image name or Docker-compatible command with:
 

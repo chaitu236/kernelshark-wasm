@@ -11,32 +11,88 @@ foreach(_ks_required_variable
     endif()
 endforeach()
 
-set(_ks_core_artifacts
-    kernelshark.html
+set(_ks_runtime_artifacts
     kernelshark.js
     kernelshark.wasm
     kernelshark.worker.js)
 
-file(REMOVE_RECURSE "${KS_DIST_DIR}")
-file(MAKE_DIRECTORY "${KS_DIST_DIR}")
-
-foreach(_ks_artifact IN LISTS _ks_core_artifacts)
+set(_ks_asset_fingerprint "")
+foreach(_ks_artifact IN LISTS _ks_runtime_artifacts)
     set(_ks_source "${KS_SOURCE_DIR}/${_ks_artifact}")
-    set(_ks_destination "${KS_DIST_DIR}/${_ks_artifact}")
     if(NOT EXISTS "${_ks_source}")
         message(FATAL_ERROR "Missing KernelShark artifact: ${_ks_source}")
     endif()
-    file(COPY_FILE "${_ks_source}" "${_ks_destination}" ONLY_IF_DIFFERENT)
+    file(SHA256 "${_ks_source}" _ks_artifact_hash)
+    string(APPEND _ks_asset_fingerprint
+        "${_ks_artifact}:${_ks_artifact_hash}\n")
+endforeach()
+
+foreach(_ks_named_source IN ITEMS
+        "qtloader.js|${KS_QT_LOADER}"
+        "favicon.svg|${KS_ICON_SOURCE}")
+    string(REPLACE "|" ";" _ks_source_parts "${_ks_named_source}")
+    list(GET _ks_source_parts 0 _ks_asset_name)
+    list(GET _ks_source_parts 1 _ks_source)
+    if(NOT EXISTS "${_ks_source}")
+        message(FATAL_ERROR "Missing KernelShark asset: ${_ks_source}")
+    endif()
+    file(SHA256 "${_ks_source}" _ks_artifact_hash)
+    string(APPEND _ks_asset_fingerprint
+        "${_ks_asset_name}:${_ks_artifact_hash}\n")
+endforeach()
+
+string(SHA256 _ks_asset_hash "${_ks_asset_fingerprint}")
+set(_ks_asset_version "${_ks_asset_hash}")
+set(_ks_asset_relative_dir "assets/${_ks_asset_version}")
+set(_ks_asset_dir "${KS_DIST_DIR}/${_ks_asset_relative_dir}")
+
+file(REMOVE_RECURSE "${KS_DIST_DIR}")
+file(MAKE_DIRECTORY "${_ks_asset_dir}")
+
+set(_ks_html_source "${KS_SOURCE_DIR}/kernelshark.html")
+if(NOT EXISTS "${_ks_html_source}")
+    message(FATAL_ERROR "Missing KernelShark artifact: ${_ks_html_source}")
+endif()
+file(READ "${_ks_html_source}" _ks_html)
+foreach(_ks_html_marker IN ITEMS
+        "href=\"favicon.svg\""
+        "QtLoader({"
+        "src=\"qtloader.js\"")
+    string(FIND "${_ks_html}" "${_ks_html_marker}" _ks_marker_position)
+    if(_ks_marker_position EQUAL -1)
+        message(FATAL_ERROR
+            "Missing expected HTML marker: ${_ks_html_marker}")
+    endif()
+endforeach()
+string(REPLACE
+    "href=\"favicon.svg\""
+    "href=\"${_ks_asset_relative_dir}/favicon.svg\""
+    _ks_html "${_ks_html}")
+string(REPLACE
+    "QtLoader({"
+    "QtLoader({\n          path: '${_ks_asset_relative_dir}',"
+    _ks_html "${_ks_html}")
+string(REPLACE
+    "src=\"qtloader.js\""
+    "src=\"${_ks_asset_relative_dir}/qtloader.js\""
+    _ks_html "${_ks_html}")
+file(WRITE "${KS_DIST_DIR}/kernelshark.html" "${_ks_html}")
+
+foreach(_ks_artifact IN LISTS _ks_runtime_artifacts)
+    file(COPY_FILE
+        "${KS_SOURCE_DIR}/${_ks_artifact}"
+        "${_ks_asset_dir}/${_ks_artifact}"
+        ONLY_IF_DIFFERENT)
 endforeach()
 
 file(COPY_FILE
     "${KS_QT_LOADER}"
-    "${KS_DIST_DIR}/qtloader.js"
+    "${_ks_asset_dir}/qtloader.js"
     ONLY_IF_DIFFERENT)
 
 file(COPY_FILE
     "${KS_ICON_SOURCE}"
-    "${KS_DIST_DIR}/favicon.svg"
+    "${_ks_asset_dir}/favicon.svg"
     ONLY_IF_DIFFERENT)
 
 file(COPY_FILE
@@ -44,24 +100,26 @@ file(COPY_FILE
     "${KS_DIST_DIR}/favicon-license.txt"
     ONLY_IF_DIFFERENT)
 
+file(WRITE "${KS_DIST_DIR}/asset-version.txt" "${_ks_asset_version}\n")
+
 foreach(_ks_artifact IN ITEMS
         kernelshark.js
         kernelshark.wasm
         kernelshark.worker.js)
     execute_process(
-        COMMAND "${KS_GZIP_EXECUTABLE}" -9 -c
-            "${KS_DIST_DIR}/${_ks_artifact}"
-        OUTPUT_FILE "${KS_DIST_DIR}/${_ks_artifact}.gz"
+        COMMAND "${KS_GZIP_EXECUTABLE}" -n -9 -c
+            "${_ks_asset_dir}/${_ks_artifact}"
+        OUTPUT_FILE "${_ks_asset_dir}/${_ks_artifact}.gz"
         COMMAND_ERROR_IS_FATAL ANY)
 endforeach()
 
 execute_process(
     COMMAND "${KS_BROTLI_EXECUTABLE}" --quality=11 --stdout
-        "${KS_DIST_DIR}/kernelshark.wasm"
-    OUTPUT_FILE "${KS_DIST_DIR}/kernelshark.wasm.br"
+        "${_ks_asset_dir}/kernelshark.wasm"
+    OUTPUT_FILE "${_ks_asset_dir}/kernelshark.wasm.br"
     COMMAND_ERROR_IS_FATAL ANY)
 
-file(GLOB _ks_forbidden_artifacts
+file(GLOB_RECURSE _ks_forbidden_artifacts
     "${KS_DIST_DIR}/*.data"
     "${KS_DIST_DIR}/plugin-*.so")
 if(_ks_forbidden_artifacts)
