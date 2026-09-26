@@ -1,8 +1,9 @@
 # Runtime image
 
 The runtime image uses unprivileged nginx on port 8080 to serve the generated
-KernelShark bundle. It enables static gzip negotiation and the cross-origin
-isolation headers required by WebAssembly pthreads.
+KernelShark bundle. It prefers the precompressed Brotli WebAssembly module,
+falls back to static gzip or the raw module according to client support, and
+adds the cross-origin isolation headers required by WebAssembly pthreads.
 
 Build and run it after `./build.sh`:
 

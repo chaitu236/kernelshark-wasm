@@ -41,6 +41,7 @@ find_program(KS_GIT_EXECUTABLE git REQUIRED)
 find_program(KS_MAKE_EXECUTABLE make REQUIRED)
 find_program(KS_PKG_CONFIG_EXECUTABLE pkg-config REQUIRED)
 find_program(KS_GZIP_EXECUTABLE gzip REQUIRED)
+find_program(KS_BROTLI_EXECUTABLE brotli REQUIRED)
 find_program(KS_HOST_CC gcc REQUIRED)
 
 set(KS_EMCMAKE "${KS_EMSDK_ROOT}/upstream/emscripten/emcmake")

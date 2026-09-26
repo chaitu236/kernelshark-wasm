@@ -4,7 +4,8 @@ foreach(_ks_required_variable
         KS_QT_LOADER
         KS_ICON_SOURCE
         KS_ICON_LICENSE_SOURCE
-        KS_GZIP_EXECUTABLE)
+        KS_GZIP_EXECUTABLE
+        KS_BROTLI_EXECUTABLE)
     if(NOT DEFINED ${_ks_required_variable})
         message(FATAL_ERROR "${_ks_required_variable} is required")
     endif()
@@ -53,6 +54,12 @@ foreach(_ks_artifact IN ITEMS
         OUTPUT_FILE "${KS_DIST_DIR}/${_ks_artifact}.gz"
         COMMAND_ERROR_IS_FATAL ANY)
 endforeach()
+
+execute_process(
+    COMMAND "${KS_BROTLI_EXECUTABLE}" --quality=11 --stdout
+        "${KS_DIST_DIR}/kernelshark.wasm"
+    OUTPUT_FILE "${KS_DIST_DIR}/kernelshark.wasm.br"
+    COMMAND_ERROR_IS_FATAL ANY)
 
 file(GLOB _ks_forbidden_artifacts
     "${KS_DIST_DIR}/*.data"

@@ -1,7 +1,8 @@
 # Builder image
 
-This image contains Emscripten 3.1.14 and matching host and thread-enabled
-WebAssembly builds of Qt 6.4.2. Build it from the repository root with:
+This image contains Emscripten 3.1.14, the Brotli artifact encoder, and matching
+host and thread-enabled WebAssembly builds of Qt 6.4.2. Build it from the
+repository root with:
 
 ```bash
 ./build_container.sh

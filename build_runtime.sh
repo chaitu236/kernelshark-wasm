@@ -12,6 +12,7 @@ for artifact in \
 	kernelshark.js \
 	kernelshark.js.gz \
 	kernelshark.wasm \
+	kernelshark.wasm.br \
 	kernelshark.wasm.gz \
 	kernelshark.worker.js \
 	kernelshark.worker.js.gz \
