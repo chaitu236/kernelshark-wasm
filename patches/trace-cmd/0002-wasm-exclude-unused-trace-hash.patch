@@ -1,0 +1,13 @@
+diff --git a/lib/trace-cmd/Makefile b/lib/trace-cmd/Makefile
+--- a/lib/trace-cmd/Makefile
++++ b/lib/trace-cmd/Makefile
+@@ -10,7 +10,9 @@
+ DEFAULT_TARGET = $(LIBTRACECMD_STATIC)
+ 
+ OBJS =
++ifneq ($(WASM),1)
+ OBJS += trace-hash.o
++endif
+ OBJS += trace-rbtree.o
+ OBJS += trace-hooks.o
+ OBJS += trace-input.o
