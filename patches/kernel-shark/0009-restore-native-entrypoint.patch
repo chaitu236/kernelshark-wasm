@@ -1,0 +1,145 @@
+diff --git a/src/kernelshark.cpp b/src/kernelshark.cpp
+index fa2be01..2ec7b1c 100644
+--- a/src/kernelshark.cpp
++++ b/src/kernelshark.cpp
+@@ -11,11 +11,6 @@
+ // Qt
+ #include <QApplication>
+ 
+-#ifdef __EMSCRIPTEN__
+-#include <emscripten/emscripten.h>
+-#include <QTimer>
+-#endif
+-
+ // KernelShark
+ #include "KsCmakeDef.hpp"
+ #include "KsMainWindow.hpp"
+@@ -25,42 +20,6 @@
+ static char *prior_input_file;
+ QStringList appInputFiles;
+ 
+-#ifdef __EMSCRIPTEN__
+-static KsMainWindow *wasmMainWindow;
+-
+-EM_JS(void, kernelshark_load_finished, (), {
+-	if (Module.kernelsharkLoadFinished)
+-		Module.kernelsharkLoadFinished();
+-});
+-
+-EM_JS(void, kernelshark_set_browser_title, (const char *title), {
+-	document.title = UTF8ToString(title);
+-});
+-
+-EM_JS(void, kernelshark_set_load_progress, (int value), {
+-	if (Module.kernelsharkLoadProgress)
+-		Module.kernelsharkLoadProgress(value);
+-});
+-
+-extern "C" EMSCRIPTEN_KEEPALIVE int kernelshark_load_file(const char *fileName,
+-							    int append)
+-{
+-	if (!wasmMainWindow || !fileName)
+-		return -1;
+-
+-	auto *window = wasmMainWindow;
+-	QString path = QString::fromUtf8(fileName);
+-	QTimer::singleShot(0, window, [window, path, append] () {
+-		if (append)
+-			window->appendDataFile(path);
+-		else
+-			window->loadDataFile(path);
+-	});
+-
+-	return 0;
+-}
+-#endif
+-
+ void usage(const char *prog)
+ {
+ 	printf("Usage: %s\n", prog);
+@@ -88,31 +47,6 @@ static option longOptions[] = {
+ 	{nullptr, 0, nullptr, 0}
+ };
+ 
+-
+-//#include <iostream>
+-#include <dlfcn.h>
+-
+-extern "C" void __attribute__((no_instrument_function)) __cyg_profile_func_enter(void* this_fn, void* call_site) {
+-	//printf("ENTER: %p, from %p\n", this_fn, call_site);
+-	Dl_info info;
+-	if (dladdr(this_fn, &info) && info.dli_sname) {
+-		printf("ENTER: %s. Lib %s\n", info.dli_sname, info.dli_fname);
+-	} else {
+-		printf("ENTER: unknown function\n");
+-	}
+-}
+-
+-extern "C" void __attribute__((no_instrument_function)) __cyg_profile_func_exit(void* this_fn, void* call_site) {
+-	//printf("EXIT: %p, from %p\n", this_fn, call_site);
+-	Dl_info info;
+-	if (dladdr(this_fn, &info) && info.dli_sname) {
+-		printf("EXIT: %s. Lib %s\n", info.dli_sname, info.dli_fname);
+-	} else {
+-		printf("EXIT: unknown function\n");
+-	}
+-}
+-
+-
+ int main(int argc, char **argv)
+ {
+ 	QVector<int> cpuPlots, taskPlots;
+@@ -124,30 +58,8 @@ int main(int argc, char **argv)
+ 	QApplication::setDesktopFileName(KS_APP_NAME);
+ 	QApplication a(argc, argv);
+ 
+-
+ 	KsMainWindow ks;
+-#ifdef __EMSCRIPTEN__
+-	wasmMainWindow = &ks;
+-	auto lamSetBrowserTitle = [] (const QString &title) {
+-		QByteArray utf8 = title.toUtf8();
+-		kernelshark_set_browser_title(utf8.constData());
+-	};
+-	QObject::connect(&ks, &QWidget::windowTitleChanged,
+-			 lamSetBrowserTitle);
+-	QObject::connect(&ks, &KsMainWindow::loadProgress,
+-			 [] (int value) {
+-				 kernelshark_set_load_progress(value);
+-			 });
+-	QObject::connect(&ks, &KsMainWindow::loadFinished,
+-			 [] () { kernelshark_load_finished(); });
+-	lamSetBrowserTitle(ks.windowTitle());
+-#endif
+-
+-#ifdef __EMSCRIPTEN__
+-	ks.showMaximized();
+-#else
+ 	ks.show();
+-#endif
+ 
+ 	while ((c = getopt_long(argc, argv, "hvi:a:p:u:s:l",
+ 					    longOptions,
+@@ -167,7 +79,7 @@ int main(int argc, char **argv)
+ 			return 0;
+ 
+ 		case 'v':
+-			//printf("%s - %s\n", basename(argv[0]), KS_VERSION_STRING);
++			printf("%s - %s\n", basename(argv[0]), KS_VERSION_STRING);
+ 			return 0;
+ 
+ 		case 'i':
+@@ -179,11 +91,11 @@ int main(int argc, char **argv)
+ 			break;
+ 
+ 		case 'p':
+-			//ks.registerPlugins(QString(optarg));
++			ks.registerPlugins(QString(optarg));
+ 			break;
+ 
+ 		case 'u':
+-			//ks.unregisterPlugins(QString(optarg));
++			ks.unregisterPlugins(QString(optarg));
+ 			break;
+ 
+ 		case 's':
