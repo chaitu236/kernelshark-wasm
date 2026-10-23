@@ -1,0 +1,106 @@
+diff --git a/lib/trace-cmd/trace-blk-hack.c b/lib/trace-cmd/trace-blk-hack.c
+index 2a05cf98..e91b50ae 100644
+--- a/lib/trace-cmd/trace-blk-hack.c
++++ b/lib/trace-cmd/trace-blk-hack.c
+@@ -5,7 +5,9 @@
+  */
+ #include <stdio.h>
+ #include "trace-cmd.h"
++#ifndef __EMSCRIPTEN__
+ #include "trace-local.h"
++#endif
+ 
+ static const char blk_event_start[] =
+ 	"name: blktrace\n"
+diff --git a/lib/trace-cmd/trace-input.c b/lib/trace-cmd/trace-input.c
+index ddf82af2..4eacf344 100644
+--- a/lib/trace-cmd/trace-input.c
++++ b/lib/trace-cmd/trace-input.c
+@@ -12,7 +12,9 @@
+ #include <unistd.h>
+ #include <errno.h>
+ 
++#ifndef __EMSCRIPTEN__
+ #include <linux/time64.h>
++#endif
+ 
+ #include "trace-write-local.h"
+ #include "trace-cmd-local.h"
+@@ -3502,7 +3504,11 @@ void tracecmd_set_ts2secs(struct tracecmd_input *handle,
+ {
+ 	double ts2secs;
+ 
++#ifdef __EMSCRIPTEN__
++	ts2secs = 1000000000.0 / (double)hz;
++#else
+ 	ts2secs = (double)NSEC_PER_SEC / (double)hz;
++#endif
+ 	handle->ts2secs = ts2secs;
+ 	handle->use_trace_clock = false;
+ }
+diff --git a/lib/trace-cmd/trace-maps.c b/lib/trace-cmd/trace-maps.c
+index d445ffea..79501557 100644
+--- a/lib/trace-cmd/trace-maps.c
++++ b/lib/trace-cmd/trace-maps.c
+@@ -1,7 +1,9 @@
+ #include <stdlib.h>
+ 
+ #include "trace-cmd-local.h"
++#ifndef __EMSCRIPTEN__
+ #include "trace-local.h"
++#endif
+ 
+ /*
+  * Structure to hold the mapping between host and guest.
+diff --git a/lib/trace-cmd/trace-msg.c b/lib/trace-cmd/trace-msg.c
+index 8d15ce07..6568509b 100644
+--- a/lib/trace-cmd/trace-msg.c
++++ b/lib/trace-cmd/trace-msg.c
+@@ -25,7 +25,12 @@
+ 
+ #include "trace-write-local.h"
+ #include "trace-cmd-local.h"
++#ifdef __EMSCRIPTEN__
++#include <stdint.h>
++typedef uint64_t u64;
++#else
+ #include "trace-local.h"
++#endif
+ #include "trace-msg.h"
+ #include "trace-cmd.h"
+ 
+diff --git a/lib/trace-cmd/trace-plugin.c b/lib/trace-cmd/trace-plugin.c
+index 72cc8ce4..92d33962 100644
+--- a/lib/trace-cmd/trace-plugin.c
++++ b/lib/trace-cmd/trace-plugin.c
+@@ -9,7 +9,13 @@
+ #include <sys/stat.h>
+ #include <libgen.h>
+ #include "trace-cmd.h"
++#ifdef __EMSCRIPTEN__
++#include <dirent.h>
++#include <limits.h>
++#include <string.h>
++#else
+ #include "trace-local.h"
++#endif
+ #include "trace-cmd-local.h"
+ 
+ #define LOCAL_PLUGIN_DIR ".local/lib/trace-cmd/plugins/"
+diff --git a/lib/trace-cmd/trace-rbtree.c b/lib/trace-cmd/trace-rbtree.c
+index a541399a..f332d5f1 100644
+--- a/lib/trace-cmd/trace-rbtree.c
++++ b/lib/trace-cmd/trace-rbtree.c
+@@ -5,7 +5,12 @@
+  */
+ #include <stdlib.h>
+ #include <stdbool.h>
++#ifdef __EMSCRIPTEN__
++#include <string.h>
++#include "trace-cmd-private.h"
++#else
+ #include "trace-local.h"
++#endif
+ #include "trace-rbtree.h"
+ 
+ enum {
