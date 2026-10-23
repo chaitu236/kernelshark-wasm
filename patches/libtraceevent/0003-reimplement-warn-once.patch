@@ -1,0 +1,17 @@
+diff --git a/src/trace-seq.c b/src/trace-seq.c
+--- a/src/trace-seq.c
++++ b/src/trace-seq.c
+@@ -10,7 +10,12 @@
+ #include <string.h>
+ #include <stdarg.h>
+ 
++#ifdef __EMSCRIPTEN__
++#define WARN_ONCE(cond, msg) (cond)
++#else
+ #include <asm/bug.h>
++#endif
++
+ #include "event-parse.h"
+ #include "event-utils.h"
+ 
+

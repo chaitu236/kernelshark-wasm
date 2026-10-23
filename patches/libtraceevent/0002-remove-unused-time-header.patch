@@ -1,0 +1,13 @@
+diff --git a/src/event-parse.c b/src/event-parse.c
+--- a/src/event-parse.c
++++ b/src/event-parse.c
+@@ -19,7 +19,9 @@
+ #include <stdint.h>
+ #include <unistd.h>
+ #include <limits.h>
++#ifndef __EMSCRIPTEN__
+ #include <linux/time64.h>
++#endif
+ 
+ #include <netinet/in.h>
+ #include "event-parse.h"
