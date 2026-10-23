@@ -1,0 +1,89 @@
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -130,7 +130,11 @@
+     #set_target_properties(kshark-gui PROPERTIES  SUFFIX ".so.${KS_VERSION_STRING}")
+ 
+     message(STATUS ${KS_APP_NAME})
+-    add_executable(${KS_APP_NAME}          kernelshark.cpp)
++    if (EMSCRIPTEN)
++        add_executable(${KS_APP_NAME}      kernelshark_wasm.cpp)
++    else ()
++        add_executable(${KS_APP_NAME}      kernelshark.cpp)
++    endif ()
+     target_link_libraries(${KS_APP_NAME}   kshark-gui)
+ 
+     if (EMSCRIPTEN)
+diff --git a/src/kernelshark_wasm.cpp b/src/kernelshark_wasm.cpp
+new file mode 100644
+--- /dev/null
++++ b/src/kernelshark_wasm.cpp
+@@ -0,0 +1,68 @@
++#include <QApplication>
++#include <QByteArray>
++#include <QPointer>
++#include <QString>
++#include <QTimer>
++
++#include "KsMainWindow.hpp"
++
++#include <emscripten/emscripten.h>
++
++static QPointer<KsMainWindow> wasmMainWindow;
++
++EM_JS(void, kernelshark_load_finished, (), {
++	if (Module.kernelsharkLoadFinished)
++		Module.kernelsharkLoadFinished();
++});
++
++EM_JS(void, kernelshark_set_browser_title, (const char *title), {
++	document.title = UTF8ToString(title);
++});
++
++EM_JS(void, kernelshark_set_load_progress, (int value), {
++	if (Module.kernelsharkLoadProgress)
++		Module.kernelsharkLoadProgress(value);
++});
++
++extern "C" EMSCRIPTEN_KEEPALIVE int kernelshark_load_file(const char *fileName,
++						      int append)
++{
++	if (!wasmMainWindow || !fileName)
++		return -1;
++
++	KsMainWindow *window = wasmMainWindow.data();
++	QString path = QString::fromUtf8(fileName);
++	QTimer::singleShot(0, window, [window, path, append] () {
++		if (append)
++			window->appendDataFile(path);
++		else
++			window->loadDataFile(path);
++	});
++
++	return 0;
++}
++
++int main(int argc, char **argv)
++{
++	QApplication application(argc, argv);
++	application.setApplicationName(QStringLiteral("kernelshark"));
++	KsMainWindow window;
++
++	wasmMainWindow = &window;
++	auto setBrowserTitle = [] (const QString &title) {
++		QByteArray utf8 = title.toUtf8();
++		kernelshark_set_browser_title(utf8.constData());
++	};
++	QObject::connect(&window, &QWidget::windowTitleChanged,
++			 &window, setBrowserTitle);
++	QObject::connect(&window, &KsMainWindow::loadProgress,
++			 &window, [] (int value) {
++				 kernelshark_set_load_progress(value);
++			 });
++	QObject::connect(&window, &KsMainWindow::loadFinished,
++			 &window, [] () { kernelshark_load_finished(); });
++	setBrowserTitle(window.windowTitle());
++	window.showMaximized();
++
++	return application.exec();
++}
