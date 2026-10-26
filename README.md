@@ -16,6 +16,21 @@ This repository currently provides:
 Testing, publication, and Kubernetes deployment are intentionally outside the
 current scope.
 
+## Licensing
+
+Independently authored project code is licensed under **MIT**, except
+where another license applies. Upstream code, upstream-derived patches, and
+third-party assets retain their applicable licenses; this is not a blanket
+relicensing of the repository or its history.
+
+The combined application built with the pinned open-source Qt WebAssembly port
+must be distributed under **GPL-3.0-only**, while preserving applicable component
+terms. See [LICENSE](LICENSE) for the grant and its scope. The full license texts
+are provided in
+[LICENSES/MIT.txt](LICENSES/MIT.txt),
+[LICENSES/LGPL-2.1-only.txt](LICENSES/LGPL-2.1-only.txt), and
+[LICENSES/GPL-3.0-only.txt](LICENSES/GPL-3.0-only.txt).
+
 ## Build with the container
 
 Build the reusable toolchain image:

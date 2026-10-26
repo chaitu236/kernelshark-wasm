@@ -1,7 +1,8 @@
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 594f16a..3c3bc6a 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -130,7 +130,11 @@
+@@ -130,7 +130,11 @@ if (Qt6Widgets_FOUND AND TT_FONT_FILE)
      #set_target_properties(kshark-gui PROPERTIES  SUFFIX ".so.${KS_VERSION_STRING}")
  
      message(STATUS ${KS_APP_NAME})
@@ -16,9 +17,12 @@ diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
      if (EMSCRIPTEN)
 diff --git a/src/kernelshark_wasm.cpp b/src/kernelshark_wasm.cpp
 new file mode 100644
+index 0000000..c624874
 --- /dev/null
 +++ b/src/kernelshark_wasm.cpp
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,70 @@
++// SPDX-License-Identifier: MIT
++
 +#include <QApplication>
 +#include <QByteArray>
 +#include <QPointer>

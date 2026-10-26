@@ -1,0 +1,26 @@
+kernelshark-wasm licensing
+=========================
+
+Independently authored project code
+----------------------------------
+
+Except where another license applies, independently authored code in this
+repository is licensed under the MIT License (SPDX-License-Identifier: MIT).
+
+The full license text is in LICENSES/MIT.txt.
+
+Upstream-derived and third-party material
+----------------------------------------
+
+Upstream code, upstream-derived patches, third-party material, and assets retain
+their applicable licenses, copyright notices, exceptions, and additional
+permissions. The MIT grant above does not relicense that material.
+
+The license text for LGPL-2.1 components is in LICENSES/LGPL-2.1-only.txt.
+
+Combined WebAssembly application
+-------------------------------
+
+For the pinned open-source Qt 6.4.2 WebAssembly build, the combined application
+must be distributed under GNU GPL version 3 (GPL-3.0-only), subject to all
+applicable component terms. The full GPLv3 text is in LICENSES/GPL-3.0-only.txt.
