@@ -1,4 +1,6 @@
 **
+!cmake/
+!cmake/CollectQtLicenses.cmake
 !containers/
 !containers/builder/
 !containers/builder/entrypoint.sh

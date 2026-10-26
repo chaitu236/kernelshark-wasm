@@ -11,6 +11,16 @@ repository root with:
 The Qt layers are intentionally expensive. Rebuilding application dependencies
 does not rebuild the image unless the Dockerfile or its inputs change.
 
+After Qt installation, the image collects Qt and bundled codec/font license
+texts, copyright notices, and acknowledgments into `${QT_WASM}/licenses`.
+The collector uses the already-downloaded Qt source tree, with no additional
+download. A checksum manifest accompanies the notices. Normal application builds
+only copy these local files into the distribution.
+
+Builder images created before notice collection was added need rebuilding.
+Alternatively, configure a matching pre-generated bundle with
+`-DKS_QT_LICENSE_DIR=/path/to/bundle`; collection never downloads missing notices.
+
 The final image exports:
 
 ```text

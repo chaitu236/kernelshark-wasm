@@ -49,6 +49,20 @@ set(KS_EMMAKE "${KS_EMSDK_ROOT}/upstream/emscripten/emmake")
 set(KS_QT_CMAKE "${KS_QT_WASM_ROOT}/bin/qt-cmake")
 set(KS_QT_LOADER
     "${KS_QT_WASM_ROOT}/plugins/platforms/qtloader.js")
+set(KS_QT_LICENSE_DIR "${KS_QT_WASM_ROOT}/licenses" CACHE PATH
+    "License and attribution bundle for the installed Qt version")
+
+if(NOT EXISTS "${KS_QT_LICENSE_DIR}/qt-version.txt")
+    message(FATAL_ERROR
+        "Qt license bundle missing at ${KS_QT_LICENSE_DIR}. "
+        "Rebuild the builder image, or set KS_QT_LICENSE_DIR to a matching bundle.")
+endif()
+file(READ "${KS_QT_LICENSE_DIR}/qt-version.txt" _ks_notice_qt_version)
+string(STRIP "${_ks_notice_qt_version}" _ks_notice_qt_version)
+if(NOT _ks_notice_qt_version STREQUAL KS_QT_VERSION)
+    message(FATAL_ERROR
+        "Qt notice version ${_ks_notice_qt_version} does not match ${KS_QT_VERSION}")
+endif()
 
 foreach(_ks_required_path
         KS_EMCMAKE

@@ -102,6 +102,14 @@ RUN source /emsdk/emsdk_env.sh \
     && cmake --build . --parallel "$(nproc)" \
     && cmake --install .
 
+COPY cmake/CollectQtLicenses.cmake /opt/build/CollectQtLicenses.cmake
+
+RUN cmake \
+    "-DKS_QT_SOURCE_ROOT=/opt/src/qt-everywhere-src-${QT_VERSION}" \
+    "-DKS_QT_LICENSE_DIR=/opt/qt/${QT_VERSION}/wasm-threaded/licenses" \
+    "-DKS_QT_VERSION=${QT_VERSION}" \
+    -P /opt/build/CollectQtLicenses.cmake
+
 FROM ${EMSCRIPTEN_IMAGE} AS builder
 
 ARG CMAKE_VERSION=3.28.3
