@@ -1,4 +1,9 @@
 foreach(_ks_required_variable
+    KS_PROJECT_ROOT
+    KS_COMPONENT_SOURCE_ROOT
+    KS_EMSDK_ROOT
+    KS_QT_LICENSE_DIR
+    KS_QT_VERSION
         KS_SOURCE_DIR
         KS_DIST_DIR
         KS_QT_LOADER
@@ -10,6 +15,20 @@ foreach(_ks_required_variable
         message(FATAL_ERROR "${_ks_required_variable} is required")
     endif()
 endforeach()
+
+set(_ks_project_license_files
+    LICENSE
+    LICENSES/MIT.txt
+    LICENSES/LGPL-2.1-only.txt
+    LICENSES/GPL-3.0-only.txt)
+foreach(_ks_license_file IN LISTS _ks_project_license_files)
+    if(NOT EXISTS "${KS_PROJECT_ROOT}/${_ks_license_file}")
+        message(FATAL_ERROR "Missing project license: ${_ks_license_file}")
+    endif()
+endforeach()
+
+include("${CMAKE_CURRENT_LIST_DIR}/CollectLicenses.cmake")
+ks_prepare_licenses()
 
 set(_ks_runtime_artifacts
     kernelshark.js
@@ -48,6 +67,16 @@ set(_ks_asset_dir "${KS_DIST_DIR}/${_ks_asset_relative_dir}")
 
 file(REMOVE_RECURSE "${KS_DIST_DIR}")
 file(MAKE_DIRECTORY "${_ks_asset_dir}")
+ks_write_licenses()
+
+foreach(_ks_license_file IN LISTS _ks_project_license_files)
+    get_filename_component(_ks_license_dir
+        "${KS_DIST_DIR}/${_ks_license_file}" DIRECTORY)
+    file(MAKE_DIRECTORY "${_ks_license_dir}")
+    file(COPY_FILE
+        "${KS_PROJECT_ROOT}/${_ks_license_file}"
+        "${KS_DIST_DIR}/${_ks_license_file}")
+endforeach()
 
 set(_ks_html_source "${KS_SOURCE_DIR}/kernelshark.html")
 if(NOT EXISTS "${_ks_html_source}")

@@ -7,6 +7,10 @@ adds the cross-origin isolation headers required by WebAssembly pthreads. Root
 HTML is revalidated on every load. Runtime assets are stored under a SHA-256
 directory and served with a one-year `immutable` cache policy.
 
+The image also serves the packaged `LICENSE`, `LICENSES/` directory, and
+`THIRD-PARTY-NOTICES.txt`. These files describe the applicable licenses and
+attribution; they are not a corresponding-source distribution.
+
 Deploy the image atomically so clients cannot receive HTML and assets from
 different image versions. Non-atomic rolling deployments must retain older
 asset directories until no served HTML can reference them.

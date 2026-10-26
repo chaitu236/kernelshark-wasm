@@ -58,6 +58,9 @@ Artifacts are written to:
 
 ```text
 out/wasm-release/dist/
+├── LICENSE                              # project licensing scope
+├── LICENSES/                            # project, upstream, Qt and runtime texts
+├── THIRD-PARTY-NOTICES.txt               # attribution and notice-file index
 ├── kernelshark.html                     # not hashed; contains the resulting hash
 ├── asset-version.txt                    # resulting bundle hash
 ├── favicon-license.txt                  # distribution metadata; not hashed
@@ -189,10 +192,22 @@ The same CMake project can use an existing compatible local toolchain:
 ```bash
 cmake --preset wasm-release \
     -DKS_EMSDK_ROOT=/path/to/emsdk \
-    -DKS_QT_WASM_ROOT=/path/to/threaded/qt-wasm
+    -DKS_QT_WASM_ROOT=/path/to/threaded/qt-wasm \
+    -DKS_QT_LICENSE_DIR=/path/to/qt-license-bundle
 
 cmake --build --preset wasm-release
 ```
 
 The source and build trees fetched by `ExternalProject` are contained entirely
 under the selected CMake binary directory.
+
+The builder image supplies its Qt notice bundle under `${QT_WASM}/licenses`.
+For a local Qt build, generate the matching bundle once from its source tree:
+
+```bash
+cmake \
+    -DKS_QT_SOURCE_ROOT=/path/to/qt-everywhere-src-6.4.2 \
+    -DKS_QT_LICENSE_DIR=/path/to/qt-license-bundle \
+    -DKS_QT_VERSION=6.4.2 \
+    -P cmake/CollectQtLicenses.cmake
+```
