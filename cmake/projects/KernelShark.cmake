@@ -23,12 +23,22 @@ ExternalProject_Add(kernelshark
         -B <BINARY_DIR>
         "-DCMAKE_BUILD_TYPE=${KS_BUILD_TYPE}"
     BUILD_COMMAND
+        "${CMAKE_COMMAND}"
+        "-DKS_PROJECT_ROOT=${CMAKE_CURRENT_SOURCE_DIR}"
+        "-DKS_PROJECT_REPOSITORY=${KS_PROJECT_REPOSITORY}"
+        "-DKS_SOURCE_INFO_FILE=${kernelshark_BINARY_DIR}/SOURCE-INFO.pending.txt"
+        "-DKS_BUILD_TYPE=${KS_BUILD_TYPE}"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/WriteSourceInfo.cmake"
+        COMMAND
         "${CMAKE_COMMAND}" -E env
         "EMCC_CFLAGS=-pthread"
         "PKG_CONFIG_PATH=${KS_PKG_CONFIG_PATH}"
         "${CMAKE_COMMAND}" --build <BINARY_DIR>
         --target kernelshark
         --parallel "${KS_BUILD_JOBS}"
+        COMMAND "${CMAKE_COMMAND}" -E rename
+        "${kernelshark_BINARY_DIR}/SOURCE-INFO.pending.txt"
+        "${kernelshark_BINARY_DIR}/SOURCE-INFO.txt"
     INSTALL_COMMAND ""
     BUILD_BYPRODUCTS
         <SOURCE_DIR>/bin/kernelshark.js
@@ -47,6 +57,7 @@ ExternalProject_Add_Step(kernelshark collect
         "-DKS_EMSDK_ROOT=${KS_EMSDK_ROOT}"
         "-DKS_QT_LICENSE_DIR=${KS_QT_LICENSE_DIR}"
         "-DKS_QT_VERSION=${KS_QT_VERSION}"
+        "-DKS_SOURCE_INFO_FILE=${kernelshark_BINARY_DIR}/SOURCE-INFO.txt"
         "-DKS_SOURCE_DIR=<SOURCE_DIR>/bin"
         "-DKS_DIST_DIR=${KS_DIST_DIR}"
         "-DKS_QT_LOADER=${KS_QT_LOADER}"

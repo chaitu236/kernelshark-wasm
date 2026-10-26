@@ -2,6 +2,8 @@ include(ProcessorCount)
 
 set(KS_BUILD_TYPE "MinSizeRel" CACHE STRING
     "Build type used for CMake-based target projects")
+set(KS_PROJECT_REPOSITORY "https://github.com/ni/kernelshark-wasm" CACHE STRING
+    "Public GitHub repository supplying project sources and patches")
 
 set(KS_EMSDK_ROOT "$ENV{EMSDK}" CACHE PATH
     "Root of the active Emscripten SDK")

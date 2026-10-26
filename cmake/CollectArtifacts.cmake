@@ -4,6 +4,7 @@ foreach(_ks_required_variable
     KS_EMSDK_ROOT
     KS_QT_LICENSE_DIR
     KS_QT_VERSION
+    KS_SOURCE_INFO_FILE
         KS_SOURCE_DIR
         KS_DIST_DIR
         KS_QT_LOADER
@@ -15,6 +16,12 @@ foreach(_ks_required_variable
         message(FATAL_ERROR "${_ks_required_variable} is required")
     endif()
 endforeach()
+
+if(NOT EXISTS "${KS_SOURCE_INFO_FILE}")
+    message(FATAL_ERROR
+        "Missing build source information: ${KS_SOURCE_INFO_FILE}. Rebuild KernelShark.")
+endif()
+file(READ "${KS_SOURCE_INFO_FILE}" _ks_source_info)
 
 set(_ks_project_license_files
     LICENSE
@@ -67,6 +74,8 @@ set(_ks_asset_dir "${KS_DIST_DIR}/${_ks_asset_relative_dir}")
 
 file(REMOVE_RECURSE "${KS_DIST_DIR}")
 file(MAKE_DIRECTORY "${_ks_asset_dir}")
+file(WRITE "${KS_DIST_DIR}/SOURCE-INFO.txt"
+    "${_ks_source_info}\nBundle asset version: ${_ks_asset_version}\n")
 ks_write_licenses()
 
 foreach(_ks_license_file IN LISTS _ks_project_license_files)

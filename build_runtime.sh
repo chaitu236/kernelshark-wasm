@@ -14,6 +14,7 @@ for artifact in \
 	LICENSES/LGPL-2.1-only.txt \
 	LICENSES/GPL-3.0-only.txt \
 	THIRD-PARTY-NOTICES.txt \
+	SOURCE-INFO.txt \
 	kernelshark.html \
 	favicon-license.txt \
 	asset-version.txt; do
@@ -40,6 +41,12 @@ fi
 if ! grep --fixed-strings --quiet "assets/$asset_version" \
 	"$DIST_DIR/kernelshark.html"; then
 	echo "HTML does not reference asset version: $asset_version" >&2
+	exit 1
+fi
+
+if ! grep --fixed-strings --line-regexp --quiet \
+	"Bundle asset version: $asset_version" "$DIST_DIR/SOURCE-INFO.txt"; then
+	echo "Source information does not match the bundle asset version." >&2
 	exit 1
 fi
 

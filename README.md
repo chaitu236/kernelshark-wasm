@@ -61,6 +61,7 @@ out/wasm-release/dist/
 ├── LICENSE                              # project licensing scope
 ├── LICENSES/                            # project, upstream, Qt and runtime texts
 ├── THIRD-PARTY-NOTICES.txt               # attribution and notice-file index
+├── SOURCE-INFO.txt                       # source revision and retrieval instructions
 ├── kernelshark.html                     # not hashed; contains the resulting hash
 ├── asset-version.txt                    # resulting bundle hash
 ├── favicon-license.txt                  # distribution metadata; not hashed
@@ -78,6 +79,10 @@ out/wasm-release/dist/
 
 The SHA-256 directory is calculated from the five files marked `hash input`.
 The root HTML is then regenerated with references to that directory.
+
+`SOURCE-INFO.txt` records the project's public source commit, upstream revisions,
+Qt source archive, runtime source links, and build instructions for the bundle.
+The runtime server advertises `/SOURCE-INFO.txt` through its HTTP `Link` header.
 
 ## Build and run the application image
 
