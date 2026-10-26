@@ -9,6 +9,11 @@ DIST_DIR="$ROOT/out/wasm-release/dist"
 VERSION_FILE="$DIST_DIR/asset-version.txt"
 
 for artifact in \
+	LICENSE \
+	LICENSES/MIT.txt \
+	LICENSES/LGPL-2.1-only.txt \
+	LICENSES/GPL-3.0-only.txt \
+	THIRD-PARTY-NOTICES.txt \
 	kernelshark.html \
 	favicon-license.txt \
 	asset-version.txt; do
@@ -18,6 +23,14 @@ for artifact in \
 		exit 1
 	fi
 done
+
+while IFS= read -r notice || [[ -n "$notice" ]]; do
+	if [[ "$notice" == LICENSES/* && ! -f "$DIST_DIR/$notice" ]]; then
+		echo "Missing license artifact: $DIST_DIR/$notice" >&2
+		echo "Run ./build.sh before building the runtime image." >&2
+		exit 1
+	fi
+done < "$DIST_DIR/THIRD-PARTY-NOTICES.txt"
 
 asset_version=$(<"$VERSION_FILE")
 if [[ ! "$asset_version" =~ ^[0-9a-f]{64}$ ]]; then
