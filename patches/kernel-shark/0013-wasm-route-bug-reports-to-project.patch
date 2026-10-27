@@ -1,0 +1,18 @@
+diff --git a/src/KsMainWindow.cpp b/src/KsMainWindow.cpp
+index 4226263..541cf6c 100644
+--- a/src/KsMainWindow.cpp
++++ b/src/KsMainWindow.cpp
+@@ -1309,8 +1309,13 @@ void KsMainWindow::_contents()
+ 
+ void KsMainWindow::_bugReport()
+ {
++#ifdef __EMSCRIPTEN__
++	QUrl bugs("https://github.com/ni/kernelshark-wasm/blob/HEAD/BUG_REPORTING.md",
++		  QUrl::TolerantMode);
++#else
+ 	QUrl bugs("https://bugzilla.kernel.org/buglist.cgi?component=Trace-cmd%2FKernelshark&product=Tools&resolution=---",
+ 		  QUrl::TolerantMode);
++#endif
+ 
+ 	QDesktopServices::openUrl(bugs);
+ }
