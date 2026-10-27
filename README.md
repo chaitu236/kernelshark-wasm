@@ -1,7 +1,8 @@
 # kernelshark-wasm
 
-`kernelshark-wasm` is a reproducible integration build for KernelShark on
-WebAssembly. It uses canonical upstream repositories at immutable revisions,
+`kernelshark-wasm` is a reproducible integration build for
+[KernelShark](https://kernelshark.org/) on WebAssembly. It uses canonical upstream
+repositories at immutable revisions,
 applies the WebAssembly port as reviewable patches, and builds each component
 with its existing native build system.
 
