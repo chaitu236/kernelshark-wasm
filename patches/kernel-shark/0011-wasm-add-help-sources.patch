@@ -1,0 +1,26 @@
+diff --git a/src/KsMainWindow.cpp b/src/KsMainWindow.cpp
+index b0ee367..9f8bdaa 100644
+--- a/src/KsMainWindow.cpp
++++ b/src/KsMainWindow.cpp
+@@ -30,6 +30,11 @@ EM_JS(void, kernelshark_append_file_picker, (), {
+ 	if (globalThis.kernelsharkAppendFilePicker)
+ 		globalThis.kernelsharkAppendFilePicker();
+ });
++
++EM_JS(void, kernelshark_open_sources, (), {
++	const sourceUrl = new URL("SOURCE-INFO.txt", globalThis.location.href);
++	globalThis.open(sourceUrl.href, "_blank", "noopener,noreferrer");
++});
+ #endif
+ 
+ // Qt
+@@ -570,6 +575,9 @@ void KsMainWindow::_createMenus()
+ 	help = menuBar()->addMenu("Help");
+ 	help->addAction(&_aboutAction);
+ 	help->addAction(&_contentsAction);
++#ifdef __EMSCRIPTEN__
++	help->addAction("Sources", this, [] () { kernelshark_open_sources(); });
++#endif
+ 	help->addAction(&_bugReportAction);
+ }
+ 
