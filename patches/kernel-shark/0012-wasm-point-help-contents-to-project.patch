@@ -1,0 +1,20 @@
+diff --git a/src/KsMainWindow.cpp b/src/KsMainWindow.cpp
+index 9f8bdaa..4226263 100644
+--- a/src/KsMainWindow.cpp
++++ b/src/KsMainWindow.cpp
+@@ -1298,8 +1298,13 @@ void KsMainWindow::_aboutInfo()
+ 
+ void KsMainWindow::_contents()
+ {
+-	QDesktopServices::openUrl(QUrl("http://kernelshark.org/",
+-				  QUrl::TolerantMode));
++#ifdef __EMSCRIPTEN__
++	const char *helpUrl = "https://github.com/ni/kernelshark-wasm";
++#else
++	const char *helpUrl = "http://kernelshark.org/";
++#endif
++
++	QDesktopServices::openUrl(QUrl(helpUrl, QUrl::TolerantMode));
+ }
+ 
+ void KsMainWindow::_bugReport()
