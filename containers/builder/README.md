@@ -7,9 +7,16 @@ repository root with:
 ```bash
 ./build_container.sh
 ```
+## PR build images
 
-The Qt layers are intentionally expensive. Rebuilding application dependencies
-does not rebuild the image unless the Dockerfile or its inputs change.
+PR builds pull a prebuilt image tagged with a hash of the builder inputs.
+When those inputs change, build and publish the matching image:
+
+```bash
+image="ghcr.io/ni/kernelshark-wasm-builder:$(./build_container.sh --print-image-tag)"
+BUILDER_IMAGE="$image" ./build_container.sh --platform linux/amd64
+docker push "$image"
+```
 
 After Qt installation, the image collects Qt and bundled codec/font license
 texts, copyright notices, and acknowledgments into `${QT_WASM}/licenses`.
