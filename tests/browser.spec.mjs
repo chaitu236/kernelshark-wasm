@@ -1,3 +1,4 @@
+import { writeFile } from 'node:fs/promises';
 import { test as base, expect } from '@playwright/test';
 import { traceFixture } from './trace-fixture.mjs';
 
@@ -26,6 +27,7 @@ test.beforeEach(async ({ page }) => {
   await page.waitForFunction(() => typeof qtLoader !== 'undefined' && qtLoader?.status === 'Running');
   await expect(page.locator('#qtspinner')).toBeHidden();
   await expect(page.locator('#qtcanvas')).toBeVisible();
+  await page.locator('#qtcanvas').click({ position: { x: 800, y: 40 } });
 });
 
 async function waitForTrace(page, fixture, count = 1) {
@@ -39,15 +41,14 @@ async function waitForTrace(page, fixture, count = 1) {
   return page.evaluate(() => [...activeTracePaths]);
 }
 
-async function pickTrace(page, fixture, append = false, count = 1) {
+async function selectTraceFile(page, fixture, append = false) {
   const chooser = page.waitForEvent('filechooser');
-  await page.evaluate(append => {
-    if (append)
-      kernelsharkAppendFilePicker();
-    else
-      kernelsharkOpenFilePicker();
-  }, append);
+  await page.keyboard.press(append ? 'Control+a' : 'Control+o');
   await (await chooser).setFiles(fixture);
+}
+
+async function pickTrace(page, fixture, append = false, count = 1) {
+  await selectTraceFile(page, fixture, append);
   return waitForTrace(page, fixture, count);
 }
 
@@ -66,7 +67,7 @@ test('starts the real threaded WASM application', async ({ page }) => {
 });
 
 test('requires an open trace before appending', async ({ page }) => {
-  await page.evaluate(() => kernelsharkAppendFilePicker());
+  await page.keyboard.press('Control+a');
   await expect(page.locator('#dropoverlay')).toHaveClass(/error/);
   await expect(page.locator('#dropmessage')).toHaveText('Open a trace file before appending');
   expect(await page.evaluate(() => activeTracePaths)).toEqual([]);
@@ -80,6 +81,7 @@ test('opens a synthetic trace through the browser file picker', async ({ page },
   const loadedView = await canvas.screenshot({ path: testInfo.outputPath('loaded-trace.png') });
   await testInfo.attach('loaded-trace', { body: loadedView, contentType: 'image/png' });
   expect(loadedView.equals(emptyView), 'Trace changes the rendered view').toBe(false);
+  await expect(canvas).toHaveScreenshot('opened-trace.png');
 });
 
 test('appends a trace while retaining the original file', async ({ page }) => {
@@ -90,6 +92,7 @@ test('appends a trace while retaining the original file', async ({ page }) => {
   const retained = await page.evaluate(path =>
     Array.from(qtLoader.module().FS.readFile(path)), originalPaths[0]);
   expect(retained).toEqual(Array.from(original.buffer));
+  await expect(page.locator('#qtcanvas')).toHaveScreenshot('appended-traces.png');
 });
 
 test('reopening a file replaces all traces and removes old uploads', async ({ page }) => {
@@ -101,22 +104,25 @@ test('reopening a file replaces all traces and removes old uploads', async ({ pa
   const oldFilesExist = await page.evaluate(paths =>
     paths.map(path => qtLoader.module().FS.analyzePath(path).exists), oldPaths);
   expect(oldFilesExist).toEqual([false, false]);
+  await expect(page.locator('#qtcanvas')).toHaveScreenshot('replacement-trace.png');
 });
 
-test('opens a trace by drag and drop', async ({ page }) => {
+test('opens a trace by drag and drop', async ({ page }, testInfo) => {
   const fixture = traceFixture('dropped.dat');
-  const dataTransfer = await page.evaluateHandle(({ name, bytes }) => {
-    const transfer = new DataTransfer();
-    transfer.items.add(new File([new Uint8Array(bytes)], name));
-    return transfer;
-  }, { name: fixture.name, bytes: Array.from(fixture.buffer) });
+  const file = testInfo.outputPath(fixture.name);
+  await writeFile(file, fixture.buffer);
+  const bounds = await page.locator('#qtcanvas').boundingBox();
+  const position = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
+  const data = { items: [], files: [file], dragOperationsMask: 1 };
+  const input = await page.context().newCDPSession(page);
   try {
-    await page.locator('#qtcanvas').dispatchEvent('dragenter', { dataTransfer });
+    await input.send('Input.dispatchDragEvent', { type: 'dragEnter', ...position, data });
     await expect(page.locator('#dropmessage')).toHaveText('Drop trace file to open');
-    await page.locator('#qtcanvas').dispatchEvent('drop', { dataTransfer });
+    await input.send('Input.dispatchDragEvent', { type: 'dragOver', ...position, data });
+    await input.send('Input.dispatchDragEvent', { type: 'drop', ...position, data });
     await waitForTrace(page, fixture);
     await expect(page).toHaveTitle(/Kernel Shark \(.*dropped\.dat\)/);
   } finally {
-    await dataTransfer.dispose();
+    await input.detach();
   }
 });
