@@ -13,9 +13,7 @@ This repository currently provides:
 - a Ninja-based release preset
 - a final `dist/` directory containing KernelShark browser artifacts
 - an unprivileged nginx runtime image for the generated application
-
-Testing, publication, and Kubernetes deployment are intentionally outside the
-current scope.
+- a [local Playwright browser test suite](tests/README.md)
 
 ## Licensing
 

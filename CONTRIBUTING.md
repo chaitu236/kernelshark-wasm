@@ -28,8 +28,9 @@ Follow the [README](README.md) for build instructions and the
 
 ## Testing
 
-There is currently no automated test suite. Build and manually test the affected
-functionality in the browser, and note any checks you could not run.
+Run the [local browser test suite](tests/README.md) against the compiled WASM
+application. Manually test affected functionality not covered by the suite,
+and note any checks you could not run.
 
 ## Developer Certificate of Origin
 
