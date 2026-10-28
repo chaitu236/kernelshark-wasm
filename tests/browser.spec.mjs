@@ -3,13 +3,15 @@ import { test as base, expect } from '@playwright/test';
 import { traceFixture } from './trace-fixture.mjs';
 
 const test = base.extend({
-  page: async ({ page }, use, testInfo) => {
+  expectedConsoleErrors: [[], { option: true }],
+  page: async ({ page, expectedConsoleErrors }, use, testInfo) => {
     const errors = [];
     const messages = [];
     page.on('pageerror', error => errors.push(error.message));
     page.on('console', message => {
       messages.push(`[${message.type()}] ${message.text()}`);
-      if (/\bERROR:|Aborted\(|RuntimeError:/.test(message.text()))
+      if (/\bERROR:|Aborted\(|RuntimeError:/.test(message.text()) &&
+          !expectedConsoleErrors.some(pattern => pattern.test(message.text())))
         errors.push(message.text());
     });
     page.on('requestfailed', request => errors.push(`${request.url()}: ${request.failure()?.errorText}`));
@@ -19,6 +21,8 @@ const test = base.extend({
       contentType: 'text/plain',
     });
     expect(errors, 'Browser errors and failed requests').toEqual([]);
+    for (const pattern of expectedConsoleErrors)
+      expect(messages.some(message => pattern.test(message)), `Expected diagnostic: ${pattern}`).toBe(true);
   },
 });
 
@@ -125,4 +129,52 @@ test('opens a trace by drag and drop', async ({ page }, testInfo) => {
   } finally {
     await input.detach();
   }
+});
+
+test.describe('invalid file recovery', () => {
+  test.use({ expectedConsoleErrors: [[
+    /ERROR: -\d+ while opening file .*invalid\.dat/,
+    /ERROR: File .* contains no data\./,
+  ], { scope: 'test' }] });
+
+  const invalidFiles = [
+    { kind: 'empty', buffer: Buffer.alloc(0) },
+    { kind: 'invalid', buffer: Buffer.from('not a trace file') },
+    { kind: 'truncated', buffer: traceFixture().buffer.subarray(0, 128) },
+  ];
+  for (const { kind, buffer } of invalidFiles) {
+    test(`recovers after loading ${kind} data`, async ({ page }) => {
+      const rejected = page.waitForEvent('console', {
+        predicate: message => /ERROR: File .* contains no data\./.test(message.text()),
+      });
+      await selectTraceFile(page, { name: 'invalid.dat', mimeType: 'application/octet-stream', buffer });
+      await rejected;
+      await page.keyboard.press('Enter');
+      await expect(page.locator('#dropoverlay')).toBeHidden();
+      const chooser = page.waitForEvent('filechooser');
+      await page.locator('#qtcanvas').click({ position: { x: 23, y: 10 } });
+      await page.locator('#qtcanvas').click({ position: { x: 90, y: 37 } });
+      const fixture = traceFixture();
+      await (await chooser).setFiles(fixture);
+      await waitForTrace(page, fixture);
+      await expect(page.locator('#qtcanvas')).toHaveScreenshot('opened-trace.png');
+    });
+  }
+
+  test('can reload while an invalid-file error is displayed', async ({ page }) => {
+    const rejected = page.waitForEvent('console', {
+      predicate: message => /ERROR: File .* contains no data\./.test(message.text()),
+    });
+    await selectTraceFile(page, {
+      name: 'invalid.dat', mimeType: 'application/octet-stream', buffer: Buffer.alloc(0),
+    });
+    await rejected;
+    await expect(page.locator('#dropoverlay')).toBeHidden();
+    await page.reload();
+    await expect(page.locator('#qtspinner')).toBeHidden();
+    await expect(page).toHaveTitle('Kernel Shark');
+    await page.locator('#qtcanvas').click({ position: { x: 800, y: 40 } });
+    await pickTrace(page, traceFixture());
+    await expect(page.locator('#qtcanvas')).toHaveScreenshot('opened-trace.png');
+  });
 });
