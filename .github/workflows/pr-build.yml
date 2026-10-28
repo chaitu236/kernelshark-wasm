@@ -51,3 +51,48 @@ jobs:
           path: out/wasm-release/dist/
           if-no-files-found: error
           retention-days: 3
+
+  browser-tests:
+    name: Browser Tests
+    needs: wasm-build
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      options: --init --ipc=host
+    defaults:
+      run:
+        working-directory: tests
+    env:
+      CI: true
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - name: Download browser artifacts
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53
+        with:
+          name: kernelshark-wasm
+          path: out/wasm-release/dist/
+
+      - name: Install test dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run browser tests
+        run: npm test
+
+      - name: Upload browser test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: browser-test-results
+          path: |
+            tests/playwright-report/
+            tests/test-results/
+          if-no-files-found: warn
+          retention-days: 3
