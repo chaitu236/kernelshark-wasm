@@ -1,0 +1,33 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "enabledManagers": ["github-actions", "npm", "dockerfile"],
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/bower_components/**",
+    "out/**",
+    "cmake/**",
+    "patches/**"
+  ],
+  "automerge": false,
+  "prConcurrentLimit": 3,
+  "packageRules": [
+    {
+      "description": "Keep the Qt-compatible Emscripten toolchain pinned.",
+      "matchPackageNames": ["emscripten/emsdk"],
+      "enabled": false
+    },
+    {
+      "description": "Update the Playwright test package and browser image together.",
+      "matchPackageNames": [
+        "@playwright/test",
+        "mcr.microsoft.com/playwright"
+      ],
+      "groupName": "Playwright",
+      "separateMajorMinor": false
+    }
+  ]
+}
