@@ -1,5 +1,15 @@
-export function traceFixture(name = 'synthetic.dat', pid = 101) {
+export function traceFixture(name = 'synthetic.dat', pid = 101, {
+  cpus = 1, eventsPerCpu = 3, spacing = 1_000_000,
+} = {}) {
   const pageSize = 4096;
+  const recordsPerPage = (pageSize - 16) / 16;
+  const pagesPerCpu = Math.ceil(eventsPerCpu / recordsPerPage);
+  const cpuSize = pagesPerCpu * pageSize;
+  const uint16 = value => {
+    const bytes = Buffer.alloc(2);
+    bytes.writeUInt16LE(value);
+    return bytes;
+  };
   const uint32 = value => {
     const bytes = Buffer.alloc(4);
     bytes.writeUInt32LE(value);
@@ -33,7 +43,8 @@ export function traceFixture(name = 'synthetic.dat', pid = 101) {
     'print fmt: "value=%d", REC->value',
     '',
   ].join('\n');
-  const commands = `${pid} test-worker\n`;
+  const commands = Array.from({ length: cpus }, (_unused, cpu) =>
+    `${pid + cpu} test-worker\n`).join('');
   const header = Buffer.concat([
     Buffer.from([0x17, 0x08, 0x44]), text('tracing6\0'),
     Buffer.from([0, 8]), uint32(pageSize),
@@ -41,21 +52,32 @@ export function traceFixture(name = 'synthetic.dat', pid = 101) {
     text('header_event\0'), uint64(0),
     uint32(0), uint32(1), text('test\0'), uint32(1), sizedText(eventFormat),
     uint32(0), uint32(0), sizedText(commands),
-    uint32(1), text('flyrecord\0'), uint64(pageSize), uint64(pageSize),
+    uint32(cpus), text('options  \0'),
+    uint16(4), uint32(5), text('mono\0'), uint16(0), text('flyrecord\0'),
+    ...Array.from({ length: cpus }, (_unused, cpu) =>
+      Buffer.concat([uint64(pageSize + cpu * cpuSize), uint64(cpuSize)])),
   ]);
   if (header.length > pageSize)
     throw new Error('Synthetic trace header exceeds one page');
 
-  const buffer = Buffer.alloc(pageSize * 2);
+  const buffer = Buffer.alloc(pageSize + cpus * cpuSize);
   header.copy(buffer);
-  buffer.writeBigUInt64LE(1_000_000_000n, pageSize);
-  buffer.writeBigUInt64LE(48n, pageSize + 8);
-  for (let index = 0; index < 3; index++) {
-    const offset = pageSize + 16 + index * 16;
-    buffer.writeUInt32LE((index === 0 ? 0 : 1_000_000) * 32 + 3, offset);
-    buffer.writeUInt16LE(1000, offset + 4);
-    buffer.writeInt32LE(pid, offset + 8);
-    buffer.writeInt32LE(index + 1, offset + 12);
+  for (let cpu = 0; cpu < cpus; cpu++) {
+    for (let pageIndex = 0; pageIndex < pagesPerCpu; pageIndex++) {
+      const pageOffset = pageSize + cpu * cpuSize + pageIndex * pageSize;
+      const firstIndex = pageIndex * recordsPerPage;
+      const records = Math.min(recordsPerPage, eventsPerCpu - firstIndex);
+      const timestamp = 1_000_000_000n + BigInt(firstIndex * spacing + cpu * 100);
+      buffer.writeBigUInt64LE(timestamp, pageOffset);
+      buffer.writeBigUInt64LE(BigInt(records * 16), pageOffset + 8);
+      for (let index = 0; index < records; index++) {
+        const offset = pageOffset + 16 + index * 16;
+        buffer.writeUInt32LE((index === 0 ? 0 : spacing) * 32 + 3, offset);
+        buffer.writeUInt16LE(1000, offset + 4);
+        buffer.writeInt32LE(pid + cpu, offset + 8);
+        buffer.writeInt32LE(firstIndex + index + 1, offset + 12);
+      }
+    }
   }
   return { name, mimeType: 'application/octet-stream', buffer };
 }
