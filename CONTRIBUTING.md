@@ -23,8 +23,8 @@ when forwarding contributions from others.
 
 ## Building and Developing
 
-Follow the [README](README.md) for build instructions and the
-[patch-development workflow](README.md#developing-kernelshark-changes).
+Follow the [README](README.md) for build instructions. KernelShark changes are
+maintained as patches in [patches/kernel-shark/](patches/kernel-shark/).
 
 ## Testing
 
