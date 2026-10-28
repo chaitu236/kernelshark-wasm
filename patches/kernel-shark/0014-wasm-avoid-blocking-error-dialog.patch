@@ -1,0 +1,27 @@
+diff --git a/src/KsMainWindow.cpp b/src/KsMainWindow.cpp
+--- a/src/KsMainWindow.cpp
++++ b/src/KsMainWindow.cpp
+@@ -1489,8 +1489,10 @@ void KsMainWindow::_error(const QString &mesg,
+ 	QString text = mesg;
+ 	QString html = mesg;
+ 
++#ifndef __EMSCRIPTEN__
+ 	if (resize)
+ 		_resizeEmpty();
++#endif
+ 
+ 	text.replace("<br>", "\n", Qt::CaseInsensitive);
+ 	html.replace("\n", "<br>", Qt::CaseInsensitive);
+@@ -1497,7 +1499,12 @@ void KsMainWindow::_error(const QString &mesg,
+ 
+ 	qCritical().noquote() << "ERROR:" << text;
+ 	em->showMessage(html, errCode);
++#ifdef __EMSCRIPTEN__
++	em->setAttribute(Qt::WA_DeleteOnClose);
++	em->open();
++#else
+ 	em->exec();
++#endif
+ }
+ 
+ /**
