@@ -3,9 +3,10 @@ ARG NGINX_IMAGE=nginxinc/nginx-unprivileged:stable-alpine@sha256:4714e0b1b2577ea
 FROM ${NGINX_IMAGE}
 
 COPY --chown=101:101 containers/runtime/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --chown=101:101 --chmod=755 containers/runtime/40-kernelshark-https.sh /docker-entrypoint.d/40-kernelshark-https.sh
 COPY --chown=101:101 out/wasm-release/dist/ /usr/share/nginx/html/
 
-EXPOSE 8080
+EXPOSE 8080 8443
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --quiet --spider http://127.0.0.1:8080/healthz || exit 1

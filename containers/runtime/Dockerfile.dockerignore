@@ -2,6 +2,7 @@
 !containers/
 !containers/runtime/
 !containers/runtime/nginx.conf
+!containers/runtime/40-kernelshark-https.sh
 !out/
 !out/wasm-release/
 !out/wasm-release/dist/

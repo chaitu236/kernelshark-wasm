@@ -24,3 +24,20 @@ docker run --rm --publish 8080:8080 kernelshark-wasm
 
 Open `http://127.0.0.1:8080/`. The health endpoint is available at
 `http://127.0.0.1:8080/healthz`.
+
+## HTTPS
+
+HTTP is the default. To serve HTTPS directly, mount `tls.crt` (PEM certificate
+chain) and `tls.key` (matching, unencrypted PEM private key), readable by UID
+101. Use a certificate trusted by the browser and valid for your hostname:
+
+```bash
+docker run --rm \
+	--env KERNELSHARK_HTTPS=1 \
+	--publish 443:8443 \
+	--mount type=bind,src="$(pwd)/tls",dst=/etc/nginx/tls,readonly \
+	kernelshark-wasm
+```
+
+Open `https://your-hostname/`. Leave HTTP port 8080 unpublished; it remains
+available inside the container for health checks.
